@@ -88,8 +88,8 @@ To make a `dough` object, we call the function `make_dough()`:
 ```{r}
 dough_obj <- make_dough(
   counts = regnase$counts,
-  guides = regnase$guides,
-  design = regnase$design,
+  guide_to_gene = regnase$guide_to_gene,
+  sample_design = regnase$sample_design,
   ntcs = regnase$ntcs
 )
 ```
@@ -132,8 +132,8 @@ Note: `biscuit` performs statistical inference using MCMC sampling, which can be
 biscuit_fit <- bake_biscuit(
   dough_obj, 
   output_dir,
-  save_samples=TRUE, 
-  n_parallel_chains=4,
+  save_samples = TRUE, 
+  n_parallel_chains = 4,
   seed=13, 
   pseudocount=TRUE)
 ```
