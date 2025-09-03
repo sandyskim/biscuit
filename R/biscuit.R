@@ -80,7 +80,7 @@ fit_biscuit <- function(dough, output_dir, save_samples=TRUE, n_parallel_chains=
   mod <- cmdstan_model(stan_file)
 
   # generate reproducible per-chain seeds
-  chain_seeds <- seed + seq_len(n_chains) - 1
+  chain_seeds <- seed + seq_len(4) - 1
 
   # save output into log
   sink(file.path(output_dir, "biscuit.log"))
