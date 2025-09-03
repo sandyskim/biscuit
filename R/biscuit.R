@@ -9,7 +9,7 @@ generate_biscuit_input <- function(dough, pseudocount=TRUE) {
   counts   <- dough$data$counts
   row_data <- dough$data$row_data
   col_data <- dough$data$col_data
-  ntc <- dough$ntc
+  ntc <- dough$data$ntc
 
   # add pseudocount
   if (pseudocount) {
