@@ -3,6 +3,7 @@
 #' @param dough dough object, with data stored in $data
 #' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
 #' @return list of input data used to fit the biscuit model
+#' @export
 generate_biscuit_input <- function(dough, pseudocount=TRUE) {
   # extract data from dough
   counts   <- dough$data$counts
@@ -56,6 +57,7 @@ generate_biscuit_input <- function(dough, pseudocount=TRUE) {
 #' @param seed integer indicating the seed for reproducibility
 #' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
 #' @return biscuit object, with $data and $fit
+#' @export
 fit_biscuit <- function(dough, output_dir, save_samples=TRUE, n_parallel_chains=4, seed=13, pseudocount=TRUE) {
   # create output directory if it doesn't exist
   if (!dir.exists(output_dir)) {
@@ -118,6 +120,7 @@ fit_biscuit <- function(dough, output_dir, save_samples=TRUE, n_parallel_chains=
 #' @param dough dough object, with data stored in $data
 #' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
 #' @return list of input data used to fit the biscuit model
+#' @export
 knead_dough <- function(dough, pseudocount=TRUE) {
   model_data <- generate_biscuit_input (dough, pseudocount)
   return(model_data)
@@ -132,6 +135,7 @@ knead_dough <- function(dough, pseudocount=TRUE) {
 #' @param seed integer indicating the seed for reproducibility
 #' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
 #' @return biscuit object, with $data and $fit
+#' @export
 bake_biscuit <- function(dough, output_dir, save_samples=TRUE, n_parallel_chains=4, seed=13, pseudocount=TRUE) {
   biscuit <- fit_biscuit(dough, output_dir, save_samples, n_parallel_chains, seed, pseudocount)
   return(biscuit)

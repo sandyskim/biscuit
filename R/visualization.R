@@ -4,6 +4,7 @@
 #'
 #' @param dough dough (or biscuit) object with $data$counts
 #' @return norm_counts matrix of normalized read counts, via median of ratios method, using DESeq2
+#' @export
 get_norm_counts <- function(dough) {
   counts <- dough$data$counts
   sf <- estimateSizeFactorsForMatrix(counts)
@@ -18,6 +19,7 @@ get_norm_counts <- function(dough) {
 #' @param dough dough object with $data$counts
 #' @param normalized logical indicating whether to normalize counts or not
 #' @return p ggplot object
+#' @export
 plot_counts_boxplot <- function(dough, normalized = TRUE) {
   if (normalized) {
     norm_counts <- get_norm_counts(dough)
@@ -52,6 +54,7 @@ plot_counts_boxplot <- function(dough, normalized = TRUE) {
 #' @param dough object with $data$counts
 #' @param normalized logical indicating whether to normalize counts or not
 #' @return p ggplot object
+#' @export
 plot_counts_distribution <- function(dough, normalized = TRUE) {
   if (normalized) {
     norm_counts <- get_norm_counts(dough)
@@ -89,6 +92,7 @@ plot_counts_distribution <- function(dough, normalized = TRUE) {
 #'
 #' @param dough dough object with $counts
 #' @return p ggplot object
+#' @export
 plot_sample_correlation <- function(dough) {
   norm_counts <- get_norm_counts(dough)
   log_norm <- log2(norm_counts + 1)
@@ -102,6 +106,7 @@ plot_sample_correlation <- function(dough) {
 #'
 #' @param dough dough object with $counts
 #' @return p ggplot object
+#' @export
 plot_count_logfc <- function(dough) {
   sample_design <- dough$data$col_data$design
   guide_names <- dough$data$row_data$sgRNA
@@ -147,6 +152,7 @@ plot_count_logfc <- function(dough) {
 #'
 #' @param dough dough object with $data$row_data
 #' @return ggplot object
+#' @export
 plot_guides_per_gene <- function(dough) {
   df <- as.data.frame(dough$data$row_data)
 
@@ -172,6 +178,7 @@ plot_guides_per_gene <- function(dough) {
 #'
 #' @param biscuit a fitted biscuit object with $results$beta1 and $data$ntc
 #' @return ggplot object
+#' @export
 plot_guide_density <- function(biscuit) {
   # annotate sgRNAs as targeting or non-targeting
   beta1_summary <- biscuit$results$beta1 %>%
@@ -201,6 +208,7 @@ plot_guide_density <- function(biscuit) {
 #'
 #' @param biscuit fitted biscuit object with $results$beta1 and $data$ntc
 #' @return ggplot object
+#' @export
 plot_guide_violin <- function(biscuit) {
   if (is.null(biscuit$results$beta1)) stop("no beta1 results found in biscuit$results")
 
@@ -231,6 +239,7 @@ plot_guide_violin <- function(biscuit) {
 #' @param lfsr_threshold threshold to highlight significant genes
 #' @param top_n number of top genes to label
 #' @return ggplot object
+#' @export
 plot_gene_rank <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
   if (is.null(biscuit$results$mu)) stop("no mu results found in biscuit$results")
 
@@ -280,6 +289,7 @@ plot_gene_rank <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
 #' @param lfsr_threshold threshold to highlight significant genes
 #' @param top_n number of top genes to label
 #' @return ggplot object
+#' @export
 plot_gene_volcano <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
   mu_summary <- biscuit$results$mu
 
@@ -326,7 +336,7 @@ plot_gene_volcano <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
 #' @param biscuit a biscuit object with $fit
 #' @param gene_name name of gene
 #' @return ggplot object
-
+#' @export
 plot_mu_beta1_density <- function(biscuit, gene_name) {
   if (is.null(biscuit$results$mu)) stop("no mu results found in biscuit$results")
   if (is.null(biscuit$results$beta1)) stop("no beta1 results found in biscuit$results")
@@ -381,7 +391,7 @@ plot_mu_beta1_density <- function(biscuit, gene_name) {
 #'
 #' @param biscuit a biscuit object with $results and $fit
 #' @return ggplot object
-
+#' @export
 plot_phi_gamma_density <- function(biscuit) {
   if (is.null(biscuit$results$phi)) stop("no phi results found in biscuit$results")
   if (is.null(biscuit$results$gamma)) stop("no gamma results found in biscuit$results")
@@ -432,6 +442,7 @@ plot_phi_gamma_density <- function(biscuit) {
 #' @param gene_name name of gene to look at
 #' @param lfsr_threshold threshold to highlight significant gene
 #' @return ggplot object
+#' @export
 plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
   if (is.null(biscuit$results$mu)) stop("no mu results found in biscuit$results")
   if (is.null(biscuit$results$beta1)) stop("no beta1 results found in biscuit$results")

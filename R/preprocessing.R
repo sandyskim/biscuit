@@ -5,6 +5,7 @@
 #' @param sample_design vector of length n_samples indicating experimental condition, where the first entry must be a control
 #' @param ntcs (optional) vector containing the names of the non-targeting guides, all of which must be in the first column of guide_to_gene
 #' @return dough object, with data stored in $data
+#' @export
 make_dough <- function(counts, guide_to_gene, sample_design, ntcs = NULL) {
   if (length(unique(sample_design)) != 2) {
     stop("sample design must have exactly two conditions.")
@@ -69,6 +70,7 @@ make_dough <- function(counts, guide_to_gene, sample_design, ntcs = NULL) {
 #' @param min_guides_per_gene minimum number of guides per gene to keep the gene
 #' @param verbose logical to print out dimensions before and after filtering
 #' @return dough object with filtered data
+#' @export
 trim_dough <- function(dough, min_counts = 30, min_guides_per_gene = 2, verbose = TRUE) {
 
   counts <- dough$data$counts

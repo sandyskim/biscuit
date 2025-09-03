@@ -2,6 +2,7 @@
 #'
 #' @param samples numeric vector of posterior samples
 #' @return numeric between 0 and 0.5
+#' @export
 compute_lfsr <- function(samples) {
   p_pos <- mean(samples >= 0)
   p_neg <- mean(samples <= 0)
@@ -15,6 +16,7 @@ compute_lfsr <- function(samples) {
 #' @param biscuit fitted biscuit object
 #' @param pars single parameter base name (e.g. "mu")
 #' @return tibble with columns: draw, parameter index, value
+#' @export
 extract_parameters <- function(biscuit, pars) {
   draws <- as.data.frame(biscuit$fit$posterior)
 
@@ -46,7 +48,8 @@ extract_parameters <- function(biscuit, pars) {
 #'
 #' @param biscuit fitted biscuit object
 #' @param pars list parameters to summarize (e.g. mu, beta1)
-#' @return biscuit object with $results[[par]] tables
+#' @return biscuit object with $results
+#' @export
 summarize_params <- function(biscuit,
                              pars = c("beta1", "mu", "beta0", "phi", "gamma")) {
   biscuit$results <- list()

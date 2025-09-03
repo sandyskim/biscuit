@@ -12,7 +12,7 @@ summarize_params(biscuit, pars = c("beta1", "mu", "beta0", "phi", "gamma"))
 \item{pars}{list parameters to summarize (e.g. mu, beta1)}
 }
 \value{
-biscuit object with $results[[par]] tables
+biscuit object with $results
 }
 \description{
 summarize posterior draws

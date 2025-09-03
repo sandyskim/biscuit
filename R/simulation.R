@@ -11,6 +11,7 @@
 #' @param n_ntc number of non-targeting control guides
 #' @param seed numeric seed for reproducibility
 #' @return list including simulated counts, guide to gene mapping, sample design and true parameter values
+#' @export
 make_playdough <- function(counts, n_genes, guides_per_gene,
                                                   n_control = 2, n_treatment = 2,
                                                   p_effects = 0.1, p_positive = 0.1,
