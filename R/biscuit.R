@@ -83,7 +83,7 @@ fit_biscuit <- function(dough, output_dir, save_samples=TRUE, n_parallel_chains=
   chain_seeds <- seed + seq_len(4) - 1
 
   # save output into log
-  sink(file.path(output_dir, "biscuit.log"))
+  sink(file.path(output_dir, "biscuit.log"), split = TRUE)
   on.exit(sink(), add = TRUE)
 
   # sample

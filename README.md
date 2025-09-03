@@ -45,7 +45,3 @@ remotes::install_github("sandyskim/biscuit")
 We provide full tutorial that demonstrates how to use `biscuit` with an
 example data set, in the introductory
 [vignette](https://github.com/sandyskim/biscuit/blob/main/vignettes/introduction.Rmd/).
-
-``` r
-browseVignettes(biscuit)
-```

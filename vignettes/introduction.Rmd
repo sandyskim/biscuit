@@ -176,6 +176,12 @@ After `biscuit` summarizes the posterior draws for the parameters of interest, `
 plot_guide_violin(biscuit_fit)
 ```
 
+`plot_beta1_ma()` visualizes inferred guide effects against average abundance, highlighting guides with strong positive or negative effects relative to their baseline counts.
+
+```{r}
+plot_beta1_ma(biscuit_fit)
+```
+
 `plot_gene_rank()` orders genes by their inferred effect size (`mu)` in descending order, visualizing the ranking and identifying the most significant hits.
 
 ```{r}

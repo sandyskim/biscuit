@@ -523,6 +523,7 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
 #' @param lfsr_threshold threshold to highlight significant guides
 #' @param top_n number of top guides to label
 #' @return ggplot object
+#' @export
 plot_beta1_ma <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
   if (is.null(biscuit$results$beta1)) stop("No beta1 results found in biscuit$results")
 
