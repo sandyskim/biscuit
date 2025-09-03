@@ -11,8 +11,8 @@ Bayesian hierarchical inference model.
 
 ## Installation
 
-`biscuit` requires cmdstanr to perform inference. To install cmdstanr
-and cmdstan,
+`biscuit` requires `cmdstanr` to perform inference. To install
+`cmdstanr` and `cmdstan`,
 
 ``` r
 install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
@@ -22,7 +22,7 @@ library(cmdstanr)
 install_cmdstan(cores = 2)
 ```
 
-`biscuit` also uses DESeq2. To install DESeq2,
+`biscuit` also uses `DESeq2`. To install `DESeq2`,
 
 ``` r
 if (!require("BiocManager", quietly = TRUE))
@@ -43,9 +43,8 @@ remotes::install_github("sandyskim/biscuit")
 ## Usage
 
 We provide full tutorial that demonstrates how to use `biscuit` with an
-example data set, in the introductory (vignette)\[<a
-href="https://github.com/sandyskim/bbiscuit/blob/main/vignettes/introduction.Rmd"
-class="uri">https://github.com/sandyskim/biscuit/blob/main/vignettes/introduction.Rmd</a>\].
+example data set, in the introductory
+[vignette](https://github.com/sandyskim/biscuit/blob/main/vignettes/introduction.Rmd/).
 
 ``` r
 browseVignettes(biscuit)

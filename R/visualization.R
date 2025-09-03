@@ -462,6 +462,7 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
 
   mu_mean <- mean(mu_draws$value)
 
+  mu_summary <- biscuit$results$mu
   mu_draws <- mu_draws %>%
     mutate(index = as.integer(stringr::str_extract(parameter, "\\d+"))) %>%
     left_join(
