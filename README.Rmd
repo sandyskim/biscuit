@@ -1,0 +1,60 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# biscuit
+
+<!-- badges: start -->
+
+<!-- badges: end -->
+
+`biscuit` is an R package for analyzing CRISPR screens utilizing a Bayesian hierarchical inference model.
+
+## Installation
+
+`biscuit` requires cmdstanr to perform inference. To install cmdstanr and cmdstan,
+
+```{r, eval = FALSE}
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+
+library(cmdstanr)
+
+install_cmdstan(cores = 2)
+```
+
+`biscuit` also uses DESeq2. To install DESeq2,
+
+```{r, eval = FALSE}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("DESeq2")
+```
+
+To install `biscuit`,
+
+```{r, eval = FALSE}
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+remotes::install_github("sandyskim/biscuit")
+```
+
+## Usage
+
+We provide full tutorial that demonstrates how to use `biscuit` with an example data set, in the introductory (vignette)[[https://github.com/sandyskim/biscuit/blob/main/vignettes/introduction.Rmd](https://github.com/sandyskim/bbiscuit/blob/main/vignettes/introduction.Rmd){.uri}].
+
+```{r, eval = FALSE}
+browseVignettes(biscuit)
+```
