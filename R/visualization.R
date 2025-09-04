@@ -1,17 +1,3 @@
-##### helper functions #####
-
-#' normalize counts
-#'
-#' @param dough dough (or biscuit) object with $data$counts
-#' @return norm_counts matrix of normalized read counts, via median of ratios method, using DESeq2
-#' @export
-get_norm_counts <- function(dough) {
-  counts <- dough$data$counts
-  sf <- estimateSizeFactorsForMatrix(counts)
-  norm_counts <- t(t(counts) / sf)
-  return(norm_counts)
-}
-
 ##### quality control plots #####
 
 #' plot distribution of log2 (optional: normalized) counts per sample
@@ -20,28 +6,30 @@ get_norm_counts <- function(dough) {
 #' @param normalized logical indicating whether to normalize counts or not
 #' @return p ggplot object
 #' @export
-plot_counts_boxplot <- function(dough, normalized = TRUE) {
-  if (normalized) {
-    norm_counts <- get_norm_counts(dough)
-    df <- as.data.frame(norm_counts)
+plot_counts_violin <- function(dough, normalize = TRUE) {
+  if (is.null(dough$data$counts)) stop("no counts found")
+
+  if (normalize) {
+    norm_counts <- normalize_counts(dough)
+    counts <- as.data.frame(norm_counts)
     title <- "distribution of log-normalized counts per sample"
     ylabel <- "log(normalized counts + 1)"
   }
   else {
-    df <- as.data.frame(dough$data$counts)
+    counts <- as.data.frame(dough$data$counts)
     title <- "distribution of log counts per sample"
     ylabel <- "log(counts + 1)"
   }
 
-  if (all(grepl("^V[0-9]+$", colnames(df)))) {
-    colnames(df) <- as.character(seq_len(ncol(df)))
+  if (all(grepl("^V[0-9]+$", colnames(counts)))) {
+    colnames(counts) <- as.character(seq_len(ncol(counts)))
   }
 
-  df$guide <- rownames(df)
-  df <- pivot_longer(df, -guide, names_to = "sample", values_to = "counts")
-  p <- ggplot(df, aes(x = sample, y = log2(counts + 1), fill = sample)) +
-    geom_violin(trim = FALSE, alpha = 0.6) +
-    geom_boxplot(width = 0.1, outlier.size = 0.5, alpha = 0.8) +
+  counts$guide <- rownames(counts)
+  counts <- pivot_longer(counts, -guide, names_to = "sample", values_to = "counts")
+  p <- ggplot(counts, aes(x = sample, y = log2(counts + 1), fill = sample)) +
+    geom_violin(trim = FALSE, alpha = 0.5) +
+    geom_boxplot(width = 0.1, outlier.size = 0.5) +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(title = title, y = ylabel)
@@ -52,37 +40,33 @@ plot_counts_boxplot <- function(dough, normalized = TRUE) {
 #' plot histogram of read counts per sample
 #'
 #' @param dough object with $data$counts
-#' @param normalized logical indicating whether to normalize counts or not
+#' @param normalize logical indicating whether to normalize counts or not
 #' @return p ggplot object
 #' @export
-plot_counts_distribution <- function(dough, normalized = TRUE) {
-  if (normalized) {
-    norm_counts <- get_norm_counts(dough)
-    df <- as.data.frame(norm_counts)
+plot_counts_density <- function(dough, normalize = TRUE) {
+  if (is.null(dough$data$counts)) stop("no counts found")
+
+  if (normalize) {
+    norm_counts <- normalize_counts(dough)
+    counts <- as.data.frame(norm_counts)
     title <- "distribution of log-normalized counts per sample"
     xlabel <- "log2(normalized counts + 1)"
   } else {
-    df <- as.data.frame(dough$data$counts)
+    counts <- as.data.frame(dough$data$counts)
     title <- "distribution of log counts per sample"
     xlabel <- "log2(counts + 1)"
   }
 
-  if (all(grepl("^V[0-9]+$", colnames(df)))) {
-    colnames(df) <- as.character(seq_len(ncol(df)))
+  if (all(grepl("^V[0-9]+$", colnames(counts)))) {
+    colnames(counts) <- as.character(seq_len(ncol(counts)))
   }
 
-  df$guide <- rownames(df)
+  counts$guide <- rownames(counts)
+  counts <- pivot_longer(counts, -guide, names_to = "sample", values_to = "count")
 
-  df <- pivot_longer(
-    df,
-    -guide,
-    names_to = "sample",
-    values_to = "count"
-  )
-
-  p <- ggplot(df, aes(x = log2(count + 1), fill = sample)) +
+  p <- ggplot(counts, aes(x = log2(count + 1), fill = sample)) +
     geom_density(alpha = 0.5) +
-    labs( title = title, x = xlabel, y = "frequency") +
+    labs(title = title, x = xlabel, y = "density") +
     theme_minimal()
 
   return(p)
@@ -94,7 +78,9 @@ plot_counts_distribution <- function(dough, normalized = TRUE) {
 #' @return p ggplot object
 #' @export
 plot_sample_correlation <- function(dough) {
-  norm_counts <- get_norm_counts(dough)
+  if (is.null(dough$data$counts)) stop("no counts found")
+
+  norm_counts <- normalize_counts(dough)
   log_norm <- log2(norm_counts + 1)
   corr <- cor(norm_counts, method = "pearson")
   p <- pheatmap(corr, main = 'sample-wise log-normalized counts correlation')
@@ -108,6 +94,8 @@ plot_sample_correlation <- function(dough) {
 #' @return p ggplot object
 #' @export
 plot_count_logfc <- function(dough) {
+  if (is.null(dough$data$counts)) stop("no counts found")
+
   sample_design <- dough$data$col_data$design
   guide_names <- dough$data$row_data$sgRNA
 
@@ -124,7 +112,7 @@ plot_count_logfc <- function(dough) {
   }
 
   # log-normalized counts with pseudocount
-  norm_counts <- get_norm_counts(dough)
+  norm_counts <- normalize_counts(dough)
   norm_counts <- log2(norm_counts + 1)
 
   # average across replicates
@@ -138,7 +126,7 @@ plot_count_logfc <- function(dough) {
   df <- data.frame(mean_abundance, logFC, guide = guide_names)
 
   p <- ggplot(df, aes(x = mean_abundance, y = logFC)) +
-    geom_point(alpha = 0.4) +
+    geom_point(alpha = 0.5) +
     geom_hline(yintercept = 0, linetype = "dashed") +
     theme_minimal() +
     xlab("mean log2 normalized counts") +
@@ -154,19 +142,24 @@ plot_count_logfc <- function(dough) {
 #' @return ggplot object
 #' @export
 plot_guides_per_gene <- function(dough) {
-  df <- as.data.frame(dough$data$row_data)
+  if (is.null(dough$data$row_data)) stop("no guide-to-gene mapping found")
 
-  # filter out non-targeting guides only if ntc exists
+  guides <- as.data.frame(dough$data$row_data)
+
+  # filter out non-targeting guides if ntc exists
   if (!is.null(dough$data$ntc)) {
-    df <- df %>% filter(!(sgRNA %in% dough$data$ntc$guide))
+    guides <- guides[!guides$sgRNA %in% dough$data$ntc$guide, , drop = FALSE]
   }
 
-  df <- df %>% count(gene, name = "n_guides")
+  guides_per_gene <- as.data.frame(table(guides$gene))
+  colnames(guides_per_gene) <- c("gene", "n_guides")
 
-  p <- ggplot(df, aes(x = n_guides)) +
+  p <- ggplot(guides_per_gene, aes(x = n_guides)) +
     geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
-    labs(title = "Distribution of sgRNAs per gene",
-         x = "# sgRNAs per gene", y = "# genes") +
+    labs(
+      title = "distribution of guides per gene",
+      x = "# guides per gene", y = "# genes"
+    ) +
     theme_minimal()
 
   return(p)
@@ -180,6 +173,8 @@ plot_guides_per_gene <- function(dough) {
 #' @return ggplot object
 #' @export
 plot_guide_density <- function(biscuit) {
+  if (is.null(biscuit$results$beta1)) stop("no beta1 results found in biscuit$results")
+
   # annotate sgRNAs as targeting or non-targeting
   beta1_summary <- biscuit$results$beta1 %>%
     mutate(control = if(!is.null(biscuit$data$ntc)) {
@@ -190,7 +185,7 @@ plot_guide_density <- function(biscuit) {
 
   # plot densities
   p <- ggplot(beta1_summary, aes(x = mean, fill = control)) +
-    geom_density(alpha = 0.4) +
+    geom_density(alpha = 0.5) +
     geom_vline(xintercept = 0, linetype = "dotted") +
     labs(
       title = "distribution of log fold changes",
@@ -221,15 +216,17 @@ plot_guide_violin <- function(biscuit) {
       )
     )
 
-  ggplot(beta1_summary, aes(x = type, y = mean, fill = type)) +
-    geom_violin(trim = FALSE, alpha = 0.6) +
-    geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.8) +
+  p <- ggplot(beta1_summary, aes(x = type, y = mean, fill = type)) +
+    geom_violin(trim = FALSE, alpha = 0.5) +
+    geom_boxplot(width = 0.1, outlier.shape = NA) +
     labs(
       x = NULL,
       y = "posterior mean guide effect (beta1)",
       fill = 'sgRNA type'
     ) +
     theme_minimal()
+
+  return(p)
 }
 
 
@@ -261,7 +258,7 @@ plot_gene_rank <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
     head(top_n)
 
   ggplot(mu_summary, aes(x = rank, y = mean, color = category)) +
-    geom_point(alpha = 0.7) +
+    geom_point(alpha = 0.5) +
     scale_color_manual(
       values = c(
         "not significant" = "grey",
@@ -291,6 +288,7 @@ plot_gene_rank <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
 #' @return ggplot object
 #' @export
 plot_gene_volcano <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
+  if (is.null(biscuit$results$mu)) stop("no mu results found in biscuit$results")
   mu_summary <- biscuit$results$mu
 
   # flag significant genes
@@ -309,7 +307,7 @@ plot_gene_volcano <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
 
   # plot
   p <- ggplot(mu_summary, aes(x = mean, y = -log10(pmax(lfsr, 1e-5)), color = category)) +
-    geom_point(alpha = 0.8) +
+    geom_point(alpha = 0.5) +
     coord_cartesian(clip = "off") +
     scale_color_manual(values = c(
       "not significant" = "grey",
@@ -348,34 +346,39 @@ plot_mu_beta1_density <- function(biscuit, gene_name) {
 
   # extract posterior draws for the gene effect
   mu_col <- paste0("mu[", gene_index, "]")
-  mu_draws <- as.data.frame(biscuit$fit$posterior)[, mu_col, drop = FALSE] %>%
-    as_tibble() %>%
-    pivot_longer(cols = everything(), names_to = "parameter", values_to = "value") %>%
-    mutate(label = gene_name,
-           type = "gene")
+  mu_draws <- data.frame(
+    value = as.data.frame(biscuit$fit$posterior)[, mu_col, drop = TRUE], # drop=TRUE returns a vector
+    label = gene_name,
+    type  = "gene",
+    stringsAsFactors = FALSE
+  )
 
   # extract posterior draws for all guides targeting this gene
   guides_idx <- which(biscuit$data$row_data[,2] == gene_name)
   guide_names <- biscuit$data$row_data[guides_idx, 1]
 
-  guide_draws <- lapply(seq_along(guides_idx), function(i) {
+  beta1_draws <- data.frame(value = numeric(0), label = character(0), type = character(0), stringsAsFactors = FALSE)
+
+  for (i in seq_along(guides_idx)) {
     idx <- guides_idx[i]
     col <- paste0("beta1[", idx, "]")
-    as.data.frame(biscuit$fit$posterior)[, col, drop = FALSE] %>%
-      as_tibble() %>%
-      pivot_longer(cols = everything(), names_to = "parameter", values_to = "value") %>%
-      mutate(label = guide_names[i],
-             type = "guide")
-  }) %>% bind_rows()
+    df <- data.frame(
+      value = as.data.frame(biscuit$fit$posterior)[, col, drop = TRUE],
+      label = guide_names[i],
+      type  = "guide",
+      stringsAsFactors = FALSE
+    )
+    beta1_draws <- rbind(beta1_draws, df)
+  }
 
   # combine posterior draws of mu and corresponding beta1
-  plot_df <- bind_rows(mu_draws, guide_draws)
+  draws <- bind_rows(mu_draws, beta1_draws)
 
   # reorder so mu is first
-  plot_df$label <- factor(plot_df$label, levels = rev(c(gene_name, guide_names)))
+  draws$label <- factor(draws$label, levels = rev(c(gene_name, guide_names)))
 
   # plot stacked densities
-  ggplot(plot_df, aes(x = value, y = label, fill = type)) +
+  ggplot(draws, aes(x = value, y = label, fill = type)) +
     ggridges::geom_density_ridges(scale = 1.5, alpha = 0.7) +
     labs(
       x = "posterior draws",
@@ -424,8 +427,8 @@ plot_phi_gamma_density <- function(biscuit) {
   # order factor so phi is on top
   phis$label <- factor(phis$label, levels = rev(unique(phis$label)))
 
-  ggplot(phis, aes(x = log(value), y = label, fill = type)) +
-    ggridges::geom_density_ridges(scale = 1.5, alpha = 0.7) +
+  p <- ggplot(phis, aes(x = log(value), y = label, fill = type)) +
+    ggridges::geom_density_ridges(scale = 1.5, alpha = 0.5) +
     labs(
       x = "posterior means",
       y = NULL,
@@ -434,6 +437,8 @@ plot_phi_gamma_density <- function(biscuit) {
     ) +
     theme_minimal() +
     theme(legend.position = "none")
+
+  return(p)
 }
 
 #' plot density plot of posterior distribution of a given given and posterior means of guides that target it
@@ -456,9 +461,11 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
   unique_genes <- unique(biscuit$data$row_data[,2])
   gene_index <- which(unique_genes == gene_name)
   mu_col <- paste0("mu[", gene_index, "]")
-  mu_draws <- as.data.frame(biscuit$fit$posterior)[, mu_col, drop = FALSE] %>%
-    as_tibble() %>%
-    pivot_longer(cols = everything(), names_to = "parameter", values_to = "value")
+  mu_draws <- data.frame(
+    parameter = mu_col,
+    value     = as.data.frame(biscuit$fit$posterior)[, mu_col, drop = TRUE],
+    stringsAsFactors = FALSE
+  )
 
   mu_mean <- mean(mu_draws$value)
 
@@ -514,8 +521,10 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
       panel.grid = element_blank()
     )
 
-  p1 / p2 + plot_layout(heights = c(1, 0.1))
+  p <- p1 / p2 + plot_layout(heights = c(1, 0.1))
+  return(p)
 }
+
 
 #' plot MA plot of guides using inferred guide effects (beta1)
 #'
@@ -525,13 +534,13 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
 #' @return ggplot object
 #' @export
 plot_beta1_ma <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
-  if (is.null(biscuit$results$beta1)) stop("No beta1 results found in biscuit$results")
+  if (is.null(biscuit$results$beta1)) stop("no beta1 results found in biscuit$results")
 
   # get beta1 summary
   beta1_summary <- biscuit$results$beta1
 
   # normalized counts per guide
-  norm_counts <- get_norm_counts(biscuit)
+  norm_counts <- normalize_counts(biscuit)
 
   # compute average abundance per guide
   avg_abundance <- log2(rowMeans(norm_counts) + 1)
@@ -539,7 +548,7 @@ plot_beta1_ma <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
   # combine
   beta1_summary <- beta1_summary %>%
     mutate(
-      A = avg_abundance[index],           # average log2 counts
+      A = avg_abundance[index],
       M = mean,
       category = case_when(
       lfsr < lfsr_threshold & mean > 0 ~ "positive",
@@ -554,8 +563,8 @@ plot_beta1_ma <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
     head(top_n)
 
   # plot
-  ggplot(beta1_summary, aes(x = A, y = M, color = category)) +
-    geom_point(alpha = 0.7, size = 1.5) +
+  p <- ggplot(beta1_summary, aes(x = A, y = M, color = category)) +
+    geom_point(alpha = 0.5, size = 1.5) +
     scale_color_manual(values = c(
       "not significant" = "grey",
       "positive" = "#F8766D",
@@ -576,4 +585,6 @@ plot_beta1_ma <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
       title = "guide-level MA plot"
     ) +
     theme_minimal()
+
+  return(p)
 }

@@ -12,7 +12,7 @@ extract_parameters(biscuit, pars)
 \item{pars}{single parameter base name (e.g. "mu")}
 }
 \value{
-tibble with columns: draw, parameter index, value
+dataframe with columns: draw, parameter index, value
 }
 \description{
 extract posterior draws for one parameter

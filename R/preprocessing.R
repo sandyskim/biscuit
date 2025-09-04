@@ -78,41 +78,42 @@ trim_dough <- function(dough, min_counts = 30, min_guides_per_gene = 2, verbose 
   col_data <- dough$data$col_data
   ntc <- dough$data$ntc
 
-  # separate targeting and non-targeting controls
+  # indicate which guides are NTC
   is_ntc <- row_data$sgRNA %in% ntc$guide
-  counts_ntc <- counts[is_ntc, , drop = FALSE]
-  row_data_ntc <- row_data[is_ntc, , drop = FALSE]
-
-  counts_targeting <- counts[!is_ntc, , drop = FALSE]
-  row_data_targeting <- row_data[!is_ntc, , drop = FALSE]
 
   # filter targeting guides by minimum count across all samples
-  keep_targeting <- rowSums(counts_targeting) >= min_counts
-  counts_targeting <- counts_targeting[keep_targeting, , drop = FALSE]
-  row_data_targeting <- row_data_targeting[keep_targeting, , drop = FALSE]
+  keep_counts <- rowSums(counts) >= min_counts
 
   # filter genes by minimum guide per gene
-  gene_counts <- table(row_data_targeting$gene)
-  keep_genes <- names(gene_counts[gene_counts >= min_guides_per_gene])
-  gene_mask <- row_data_targeting$gene %in% keep_genes
-  counts_targeting <- counts_targeting[gene_mask, , drop = FALSE]
-  row_data_targeting <- row_data_targeting[gene_mask, , drop = FALSE]
+  gene_table <- table(row_data$gene)
+  keep_genes <- row_data$gene %in% names(gene_table[gene_table >= min_guides_per_gene])
+
+  # keep guides that satisfy counts and gene rules, or are NT controls
+  keep <- (keep_counts & keep_genes) | is_ntc
+
+  counts_filtered <- counts[keep, , drop = FALSE]
+  row_data_filtered <- row_data[keep, , drop = FALSE]
 
   # reconstruct count matrix so targeting guides come first and then non-targeting guides
-  counts_filtered <- rbind(counts_targeting, counts_ntc)
-  row_data_filtered <- rbind(row_data_targeting, row_data_ntc)
-  if (!is.null(ntc)) {
+  if(!is.null(ntc)) {
+    is_ntc_filtered <- row_data_filtered$sgRNA %in% ntc$guide
+    counts_filtered <- rbind(counts_filtered[!is_ntc_filtered, , drop = FALSE],
+                             counts_filtered[is_ntc_filtered, , drop = FALSE])
+    row_data_filtered <- rbind(row_data_filtered[!is_ntc_filtered, , drop = FALSE],
+                          row_data_filtered[is_ntc_filtered, , drop = FALSE])
     ntc <- ntc[ntc$guide %in% row_data_filtered$sgRNA, , drop = FALSE]
     ntc$index <- match(ntc$guide, row_data_filtered$sgRNA)
   }
 
-  # update dough object
-  dough$data <- list(counts = counts_filtered,
-                     row_data = row_data_filtered,
-                     col_data = col_data,
-                     ntc = ntc
+  # save filtered data to dough
+  dough$data <- list(
+    counts = counts_filtered,
+    row_data = row_data_filtered,
+    col_data = col_data,
+    ntc = ntc
   )
 
+  # print before filtering and after filtering
   if (verbose) {
     message("guides before: ", nrow(row_data),
             "; after: ", nrow(row_data_filtered))

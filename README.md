@@ -27,26 +27,18 @@ library(cmdstanr)
 install_cmdstan(cores = 2)
 ```
 
-`biscuit` also uses `DESeq2`. To install `DESeq2`,
-
-``` r
-if (!require("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-
-BiocManager::install("DESeq2")
-```
-
 To install `biscuit`,
 
 ``` r
 if (!requireNamespace("remotes", quietly = TRUE)) {
   install.packages("remotes")
 }
+
 remotes::install_github("sandyskim/biscuit")
 ```
 
 ## Usage
 
-We provide full tutorial that demonstrates how to use `biscuit` with an
-example data set, in the introductory
+We provide a full tutorial that demonstrates how to use `biscuit` with
+an example data set in the introductory
 [vignette](https://github.com/sandyskim/biscuit/blob/main/vignettes/introduction.Rmd/).

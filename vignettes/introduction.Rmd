@@ -28,17 +28,6 @@ library(cmdstanr)
 install_cmdstan(cores = 2) # number of cores to use for installation
 ```
 
-To install `DESeq2`:
-
-```{r}
- if (!require("BiocManager", quietly = TRUE)) {
-    install.packages("BiocManager")
- }
-
-BiocManager::install("DESeq2")
-library(DESeq2)
-```
-
 To install `biscuit`:
 
 ```{r}

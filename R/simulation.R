@@ -24,7 +24,7 @@ make_playdough <- function(counts, n_genes, guides_per_gene,
 
   # method of moments from real data
   row_means <- rowMeans(counts_mat + 1)
-  row_vars <- rowVars(counts_mat) # can use matrixStats::rowVars for speed
+  row_vars <- rowVars(counts_mat)
   beta0_real <- log(row_means)
   phi_real <- pmax(1 / (row_vars / row_means^2 - 1), 1e-3)
 
@@ -49,7 +49,7 @@ make_playdough <- function(counts, n_genes, guides_per_gene,
   beta1_g <- gene_effect[gene_map[1:(n_genes * guides_per_gene)]]
   beta1_g <- c(beta1_g, rep(0, n_ntc))  # non-targeting guides
 
-  # Simulate baseline mean counts
+  # simulate baseline mean counts
   mu_mat <- matrix(exp(beta0_g), nrow = n_guides, ncol = n_samples)
 
   # simulate sample-wise dispersion scalars

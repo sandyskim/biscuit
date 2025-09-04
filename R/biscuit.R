@@ -18,7 +18,7 @@ generate_biscuit_input <- function(dough, pseudocount=TRUE) {
   }
 
   # estimate size factors using DESeq2
-  sf <- estimateSizeFactorsForMatrix(counts)
+  sf <- compute_size_factors(dough)
 
   # normalize counts
   norm_counts <- t(t(counts) / sf)
@@ -80,9 +80,9 @@ fit_biscuit <- function(dough, output_dir, save_samples=TRUE, n_parallel_chains=
   mod <- cmdstan_model(stan_file)
 
   # generate reproducible per-chain seeds
-  chain_seeds <- seed + seq_len(4) - 1
+  chain_seeds <- seed + seq_len(4) - 1L
 
-  # save output into log
+  # save output into log, but also print to console
   sink(file.path(output_dir, "biscuit.log"), split = TRUE)
   on.exit(sink(), add = TRUE)
 
