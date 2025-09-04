@@ -2,24 +2,26 @@
 % Please edit documentation in R/simulation.R
 \name{make_playdough}
 \alias{make_playdough}
-\title{simulate count data using moments estimated from real data}
+\title{simulate count data using either fixed, parametric, or empirical gene effects}
 \usage{
 make_playdough(
-  counts,
   n_genes,
   guides_per_gene,
   n_control = 2,
   n_treatment = 2,
-  p_effects = 0.1,
+  p_effects = 0.2,
   p_positive = 0.1,
   fold_change = 4,
   n_ntc = 1000,
-  seed = 13
+  seed = 13,
+  counts = NULL,
+  effect_mode = c("fixed", "parametric", "empirical"),
+  gene_params = list(mu = log(fold_change), sd = 0.2),
+  guide_sd = 0.2,
+  quantiles = c(0.05, 0.95)
 )
 }
 \arguments{
-\item{counts}{matrix of raw experimental counts}
-
 \item{n_genes}{number of genes to simulate}
 
 \item{guides_per_gene}{number of guides per gene to simulate}
@@ -28,19 +30,29 @@ make_playdough(
 
 \item{n_treatment}{number of treatment samples}
 
-\item{p_effects}{proportion of effects}
+\item{p_effects}{proportion of genes with a non-zero effect}
 
 \item{p_positive}{proportion of effects that are positive}
 
-\item{fold_change}{absolute fold change of significant effects}
+\item{fold_change}{absolute fold change of non-zero effects for fixed-effect mode, default mean for parametric mode}
 
 \item{n_ntc}{number of non-targeting control guides}
 
-\item{seed}{numeric seed for reproducibility}
+\item{seed}{integer seed for reproducibility}
+
+\item{counts}{optional matrix of raw experimental counts; if provided, will use to calculate baseline expression and guide-wise dispersion}
+
+\item{effect_mode}{"fixed", "parametric", or "empirical": modes that determine how gene effects are simulated}
+
+\item{gene_params}{optional list for parametric mode (e.g. list(mu = log(4), sd = 0.3))}
+
+\item{guide_sd}{optional standard deviation for guide effect simulation}
+
+\item{quantiles}{optional quantiles (e.g. c(0.05, 0.95)) to draw significant effects from in empirical mode}
 }
 \value{
-list including simulated counts, guide to gene mapping, sample design and true parameter values
+list with simulated counts, guide to gene mapping, sample design and true parameter values
 }
 \description{
-simulate count data using moments estimated from real data
+simulate count data using either fixed, parametric, or empirical gene effects
 }
