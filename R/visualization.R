@@ -198,7 +198,6 @@ plot_guide_density <- function(biscuit) {
   return(p)
 }
 
-
 #' plot violin plot of biscuit targeting vs non-targeting control guide log fold changes
 #'
 #' @param biscuit fitted biscuit object with $results$beta1 and $data$ntc
@@ -524,7 +523,6 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
   p <- p1 / p2 + plot_layout(heights = c(1, 0.1))
   return(p)
 }
-
 
 #' plot MA plot of guides using inferred guide effects (beta1)
 #'

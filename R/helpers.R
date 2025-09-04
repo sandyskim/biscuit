@@ -14,7 +14,6 @@ compute_size_factors <- function(dough) {
   return(sf)
 }
 
-
 #' normalize counts using the median-of-ratios method (ref. DESeq2)
 #'
 #' @param dough dough (or biscuit) object with $data$counts

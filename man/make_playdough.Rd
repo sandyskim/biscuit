@@ -44,7 +44,7 @@ make_playdough(
 
 \item{effect_mode}{"fixed", "parametric", or "empirical": modes that determine how gene effects are simulated}
 
-\item{gene_params}{optional list for parametric mode (e.g. list(mu = log(4), sd = 0.3))}
+\item{gene_params}{optional list for parametric mode (e.g. list(mu = log(4), sd = 0.2))}
 
 \item{guide_sd}{optional standard deviation for guide effect simulation}
 

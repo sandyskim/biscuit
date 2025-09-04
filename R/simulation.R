@@ -11,7 +11,7 @@
 #' @param seed integer seed for reproducibility
 #' @param counts optional matrix of raw experimental counts; if provided, will use to calculate baseline expression and guide-wise dispersion
 #' @param effect_mode "fixed", "parametric", or "empirical": modes that determine how gene effects are simulated
-#' @param gene_params optional list for parametric mode (e.g. list(mu = log(4), sd = 0.3))
+#' @param gene_params optional list for parametric mode (e.g. list(mu = log(4), sd = 0.2))
 #' @param guide_sd optional standard deviation for guide effect simulation
 #' @param quantiles optional quantiles (e.g. c(0.05, 0.95)) to draw significant effects from in empirical mode
 #' @return list with simulated counts, guide to gene mapping, sample design and true parameter values
@@ -46,7 +46,7 @@ make_playdough <- function(n_genes, guides_per_gene,
     # method of moments
     row_means <- rowMeans(counts_mat)
     row_vars  <- matrixStats::rowVars(counts_mat)
-    beta0_real <- log(row_means)
+    beta0_real <- log(row_means + 1)
     phi_real   <- pmax(1 / (row_vars / row_means^2 - 1), 1e-3)
 
     # randomly sample pairs of moments (beta0, phi)
@@ -78,10 +78,10 @@ make_playdough <- function(n_genes, guides_per_gene,
     gene_effect[1:n_effects] <- abs(rnorm(n_effects, mean = gene_mu, sd = gene_sd)) * signs
 
   } else if (effect_mode == "empirical") { # empirical gene effect (distribution estimated from empirical data)
-    lfc <- log(row_means) - median(log(row_means)) # empirical log-fold change, blind to sample conditions
+    lfc <- log(row_means + 1) - median(log(row_means) + 1) # empirical log-fold change, blind to sample conditions
     if (!is.null(quantiles)) { # take extreme effects based on defined quantiles
       q <- quantile(lfc, probs = quantiles, na.rm = TRUE)
-      lfc <- lfc[lfc <= q[1] | lfc >= q[2]]
+      lfc <- lfc[(lfc <= q[1] | lfc >= q[2])]
     }
 
     gene_effect[1:n_effects] <- sample(lfc, n_effects, replace = TRUE)
@@ -144,7 +144,8 @@ make_playdough <- function(n_genes, guides_per_gene,
       beta1  = beta1_g,
       mu     = gene_effect,
       phi    = phi_g,
-      gamma  = gamma
+      gamma  = gamma,
+      sf = size_factors
     )
   )
 

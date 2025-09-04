@@ -25,7 +25,6 @@ extract_parameters <- function(biscuit, pars) {
   return(parameters)
 }
 
-
 #' summarize posterior draws
 #'
 #' @param biscuit fitted biscuit object
