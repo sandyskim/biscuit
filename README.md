@@ -5,6 +5,11 @@
 
 <!-- badges: start -->
 <!-- badges: end -->
+<p align="left">
+
+<img src="man/figures/biscuit_logo.png" width="150"/>
+
+</p>
 
 `biscuit` is an R package for analyzing CRISPR screens utilizing a
 Bayesian hierarchical inference model.
