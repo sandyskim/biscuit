@@ -7,7 +7,7 @@
 trim_dough(dough, min_counts = 30, min_guides_per_gene = 2, verbose = TRUE)
 }
 \arguments{
-\item{dough}{dough object with $data: $data$counts, $data$row_data, $data$col_data (optional: $data$ntc)}
+\item{dough}{dough object with $data: $data$counts, $data$row_data, $data$col_data (optional: $data$controls)}
 
 \item{min_counts}{minimum total counts per guide across samples to keep}
 

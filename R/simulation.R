@@ -134,9 +134,10 @@ make_playdough <- function(n_genes, guides_per_gene,
   )
 
   playdough <- list(
-    counts   = sim_counts,
-    row_data = guide_to_gene,
-    col_data = sample_design,
+    data = list(counts   = sim_counts,
+                row_data = guide_to_gene,
+                col_data = sample_design,
+                controls = guide_to_gene$sgRNA[guide_to_gene$gene == (n_genes + 1)]),
     truth = list(
       significant_genes = which(gene_effect != 0),
       significant_guides = which(gene_map %in% which(gene_effect != 0)),

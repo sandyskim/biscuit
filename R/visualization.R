@@ -147,8 +147,8 @@ plot_guides_per_gene <- function(dough) {
   guides <- as.data.frame(dough$data$row_data)
 
   # filter out non-targeting guides if ntc exists
-  if (!is.null(dough$data$ntc)) {
-    guides <- guides[!guides$sgRNA %in% dough$data$ntc$guide, , drop = FALSE]
+  if (!is.null(dough$data$controls)) {
+    guides <- guides[!guides$sgRNA %in% dough$data$controls$guide, , drop = FALSE]
   }
 
   guides_per_gene <- as.data.frame(table(guides$gene))
@@ -169,16 +169,16 @@ plot_guides_per_gene <- function(dough) {
 
 #' plot densities of targeting vs non-targeting guide log fold changes
 #'
-#' @param biscuit a fitted biscuit object with $results$beta1 and $data$ntc
+#' @param biscuit a fitted biscuit object with $results$beta1 and $data$controls
 #' @return ggplot object
 #' @export
 plot_guide_density <- function(biscuit) {
-  if (is.null(biscuit$results$beta1)) stop("no beta1 results found in biscuit$results")
+  if (is.null(biscuit$results$beta1)) stop("no beta1 results found")
 
   # annotate sgRNAs as targeting or non-targeting
   beta1_summary <- biscuit$results$beta1 %>%
-    mutate(control = if(!is.null(biscuit$data$ntc)) {
-      ifelse(sgRNA %in% biscuit$data$ntc$guide, "non-targeting", "targeting")
+    mutate(control = if(!is.null(biscuit$data$controls)) {
+      ifelse(sgRNA %in% biscuit$data$controls$guide, "non-targeting", "targeting")
     } else {
       "targeting"
     })
@@ -200,16 +200,16 @@ plot_guide_density <- function(biscuit) {
 
 #' plot violin plot of biscuit targeting vs non-targeting control guide log fold changes
 #'
-#' @param biscuit fitted biscuit object with $results$beta1 and $data$ntc
+#' @param biscuit fitted biscuit object with $results$beta1 and $data$controls
 #' @return ggplot object
 #' @export
 plot_guide_violin <- function(biscuit) {
-  if (is.null(biscuit$results$beta1)) stop("no beta1 results found in biscuit$results")
+  if (is.null(biscuit$results$beta1)) stop("no beta1 results found")
 
   beta1_summary <- biscuit$results$beta1 %>%
     mutate(
       type = ifelse(
-        sgRNA %in% biscuit$data$ntc$guide,
+        sgRNA %in% biscuit$data$controls$guide,
         "non-targeting",
         "targeting"
       )
@@ -237,7 +237,7 @@ plot_guide_violin <- function(biscuit) {
 #' @return ggplot object
 #' @export
 plot_gene_rank <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
-  if (is.null(biscuit$results$mu)) stop("no mu results found in biscuit$results")
+  if (is.null(biscuit$results$mu)) stop("no mu results found")
 
   mu_summary <- biscuit$results$mu %>%
     arrange(desc(mean)) %>%
@@ -287,7 +287,7 @@ plot_gene_rank <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
 #' @return ggplot object
 #' @export
 plot_gene_volcano <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
-  if (is.null(biscuit$results$mu)) stop("no mu results found in biscuit$results")
+  if (is.null(biscuit$results$mu)) stop("no mu results found")
   mu_summary <- biscuit$results$mu
 
   # flag significant genes
@@ -335,8 +335,8 @@ plot_gene_volcano <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
 #' @return ggplot object
 #' @export
 plot_mu_beta1_density <- function(biscuit, gene_name) {
-  if (is.null(biscuit$results$mu)) stop("no mu results found in biscuit$results")
-  if (is.null(biscuit$results$beta1)) stop("no beta1 results found in biscuit$results")
+  if (is.null(biscuit$results$mu)) stop("no mu results found")
+  if (is.null(biscuit$results$beta1)) stop("no beta1 results found")
 
   # find gene index in row_data
   unique_genes <- unique(biscuit$data$row_data[,2])
@@ -395,8 +395,8 @@ plot_mu_beta1_density <- function(biscuit, gene_name) {
 #' @return ggplot object
 #' @export
 plot_phi_gamma_density <- function(biscuit) {
-  if (is.null(biscuit$results$phi)) stop("no phi results found in biscuit$results")
-  if (is.null(biscuit$results$gamma)) stop("no gamma results found in biscuit$results")
+  if (is.null(biscuit$results$phi)) stop("no phi results found")
+  if (is.null(biscuit$results$gamma)) stop("no gamma results found")
 
   # phi and gamma means
   phi_means <- biscuit$results$phi$mean
@@ -440,7 +440,7 @@ plot_phi_gamma_density <- function(biscuit) {
   return(p)
 }
 
-#' plot density plot of posterior distribution of a given given and posterior means of guides that target it
+#' plot density plot of posterior distribution of a given gene and posterior means of guides that target it
 #'
 #' @param biscuit a biscuit object with $results and $fit
 #' @param gene_name name of gene to look at
@@ -448,13 +448,13 @@ plot_phi_gamma_density <- function(biscuit) {
 #' @return ggplot object
 #' @export
 plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
-  if (is.null(biscuit$results$mu)) stop("no mu results found in biscuit$results")
-  if (is.null(biscuit$results$beta1)) stop("no beta1 results found in biscuit$results")
+  if (is.null(biscuit$results$mu)) stop("no mu results found")
+  if (is.null(biscuit$results$beta1)) stop("no beta1 results found")
 
   # guides targeting the gene
   guides_idx <- which(biscuit$data$row_data$gene == gene_name)
   guide_names <- biscuit$data$row_data$guide[guides_idx]
-  if (length(guides_idx) == 0) stop("gene not found in biscuit$data$row_data")
+  if (length(guides_idx) == 0) stop("gene not found in guide-to-gene mapping")
 
   # posterior draws for mu
   unique_genes <- unique(biscuit$data$row_data[,2])
@@ -531,8 +531,8 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
 #' @param top_n number of top guides to label
 #' @return ggplot object
 #' @export
-plot_beta1_ma <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
-  if (is.null(biscuit$results$beta1)) stop("no beta1 results found in biscuit$results")
+plot_guide_ma <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
+  if (is.null(biscuit$results$beta1)) stop("no beta1 results found")
 
   # get beta1 summary
   beta1_summary <- biscuit$results$beta1

@@ -4,16 +4,16 @@
 \alias{make_dough}
 \title{make dough object from counts, guide_to_gene mapping, and design of samples (optional: list of names of non-targeting controls)}
 \usage{
-make_dough(counts, guide_to_gene, sample_design, ntcs = NULL)
+make_dough(counts, guide_to_gene, sample_design, controls = NULL)
 }
 \arguments{
 \item{counts}{n_guides x n_samples matrix holding the raw guide/sgRNA counts in each sample}
 
-\item{guide_to_gene}{n_guides x 2 matrix holding the name of the guide/sgRNA in the first column and the name of the gene it's targeting in the second column}
+\item{guide_to_gene}{n_guides x 2 matrix holding the name of the guide/sgRNA in the first column and the name of the gene it's targeting in the second column.}
 
-\item{sample_design}{vector of length n_samples indicating experimental condition, where the first entry must be a control}
+\item{sample_design}{n_samples x 2 holding the name of the samples (which match the column names of the counts) in the first column and the experimental design in the second column. the first sample must be a control sample.}
 
-\item{ntcs}{(optional) vector containing the names of the non-targeting guides, all of which must be in the first column of guide_to_gene}
+\item{controls}{(optional) vector containing the names of the non-targeting guides, all of which must be in the first column of guide_to_gene}
 }
 \value{
 dough object, with data stored in $data

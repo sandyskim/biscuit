@@ -9,7 +9,7 @@ generate_biscuit_input <- function(dough, pseudocount=TRUE) {
   counts   <- dough$data$counts
   row_data <- dough$data$row_data
   col_data <- dough$data$col_data
-  ntc <- dough$data$ntc
+  controls <- dough$data$controls
 
   # add pseudocount
   if (pseudocount) {
@@ -17,7 +17,7 @@ generate_biscuit_input <- function(dough, pseudocount=TRUE) {
     message("added pseudocount of 1 to counts matrix.")
   }
 
-  # estimate size factors using DESeq2
+  # estimate size factors
   sf <- compute_size_factors(dough)
 
   # normalize counts
@@ -27,7 +27,7 @@ generate_biscuit_input <- function(dough, pseudocount=TRUE) {
   design <- as.integer(factor(col_data$design)) - 1L
 
   # indicate ntcs
-  is_ntc <- as.integer(row_data$sgRNA %in% ntc$guide)
+  is_ntc <- as.integer(row_data$sgRNA %in% controls$guide)
 
   # code guide to gene mapping as integers for a numeric mapping
   gene_ids <- as.integer(factor(row_data$gene, levels = unique(row_data$gene)))
@@ -69,7 +69,7 @@ fit_biscuit <- function(dough, output_dir, save_samples=TRUE, n_parallel_chains=
   model_data <- knead_dough(dough, pseudocount)
 
   # pick Stan file depending on provided non-targeting controls
-  if (is.null(dough$data$ntc)) {
+  if (is.null(dough$data$controls)) {
     message("no non-targeting controls detected, using non-targeting control free model.")
     stan_file <- system.file("stan", "crispr_screen_no_ntcs.stan", package = "biscuit")
   } else {
@@ -79,9 +79,6 @@ fit_biscuit <- function(dough, output_dir, save_samples=TRUE, n_parallel_chains=
   # compile stan model
   mod <- cmdstan_model(stan_file)
 
-  # generate reproducible per-chain seeds
-  chain_seeds <- seed + seq_len(4) - 1L
-
   # save output into log, but also print to console
   sink(file.path(output_dir, "biscuit.log"), split = TRUE)
   on.exit(sink(), add = TRUE)
@@ -90,7 +87,7 @@ fit_biscuit <- function(dough, output_dir, save_samples=TRUE, n_parallel_chains=
   fit <- mod$sample(
     data = model_data,
     parallel_chains = n_parallel_chains,
-    seed = chain_seeds,
+    seed = seed,
     show_exceptions = FALSE,
     show_messages = TRUE
   )

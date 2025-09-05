@@ -7,7 +7,7 @@
 plot_guide_density(biscuit)
 }
 \arguments{
-\item{biscuit}{a fitted biscuit object with $results$beta1 and $data$ntc}
+\item{biscuit}{a fitted biscuit object with $results$beta1 and $data$controls}
 }
 \value{
 ggplot object

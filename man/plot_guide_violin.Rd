@@ -7,7 +7,7 @@
 plot_guide_violin(biscuit)
 }
 \arguments{
-\item{biscuit}{fitted biscuit object with $results$beta1 and $data$ntc}
+\item{biscuit}{fitted biscuit object with $results$beta1 and $data$controls}
 }
 \value{
 ggplot object

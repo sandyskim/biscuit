@@ -2,7 +2,7 @@
 % Please edit documentation in R/visualization.R
 \name{plot_mu_beta1}
 \alias{plot_mu_beta1}
-\title{plot density plot of posterior distribution of a given given and posterior means of guides that target it}
+\title{plot density plot of posterior distribution of a given gene and posterior means of guides that target it}
 \usage{
 plot_mu_beta1(biscuit, gene_name, lfsr_threshold = 0.05)
 }
@@ -17,5 +17,5 @@ plot_mu_beta1(biscuit, gene_name, lfsr_threshold = 0.05)
 ggplot object
 }
 \description{
-plot density plot of posterior distribution of a given given and posterior means of guides that target it
+plot density plot of posterior distribution of a given gene and posterior means of guides that target it
 }
