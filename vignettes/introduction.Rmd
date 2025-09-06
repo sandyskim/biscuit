@@ -20,8 +20,8 @@ knitr::opts_chunk$set(
 
 To install `cmdstanr` (and `cmdstan`):
 
-```{r}
-# we recommend running this is a fresh R session or restarting your current session
+```{rf}
+# we recommend running this in a fresh R session or restarting your current session
 install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
 
 library(cmdstanr)
@@ -55,7 +55,7 @@ The `biscuit` workflow:
 4.  **Explore posterior estimates**\
     After fitting the model, summarize the guide- and gene-level posterior distributions, which provide both effect size estimates and uncertainty, and significant hits. Additionally, `biscuit` provides plotting functions to visualize these results.
 
-To demonstrate how to use `biscuit`, we provide an example using the data from Regnase-1 screen (<https://doi.org/10.1038/s41586-019-1821-z>).
+To demonstrate how to use `biscuit`, we provide an example using the data from Regnase-1 screen [1].
 
 ### Input
 
@@ -130,7 +130,7 @@ biscuit_fit <- bake_biscuit(
   pseudocount=TRUE)
 ```
 
-Once the model is finished fitting, `biscuit_fit()` converts the original `dough` object into a `biscuit` object, which contains the original input data from `dough$data` under `$data` and the posterior samples under `fit`.
+Once the model is finished fitting, `biscuit_fit()` converts the original `dough` object into a `biscuit` object, which contains the original input data from `dough$data` under `$data` and the posterior samples, sampling diagnostics, and sampling run time under `$fit`.
 
 ### Exploring the posterior
 
@@ -160,6 +160,8 @@ head(biscuit_fit$results$beta1)
 head(biscuit_fit$results$mu)
 ```
 
+After posterior draws are summarized, the `biscuit` object stores the summaries under `$results`.
+
 #### Visualizing results
 
 After `biscuit` summarizes the posterior draws for the parameters of interest, `biscuit` provides a few plotting functions to visualize results.
@@ -171,10 +173,10 @@ plot_guide_violin(biscuit_fit)
 ```
 
 `plot_guide_ma()` visualizes the guides' average effects against its deviation from the mean. This allows us to identify any biases or trends in the posterior at the guide-level; in particular, outlier guides with strong deviations that can influence the gene-level inferred effect `mu`.
+
 ```{r}
 plot_guide_ma(biscuit_fit)
 ```
-
 
 `plot_gene_rank()` orders genes by their inferred effect size (`mu)` in descending order, visualizing the ranking and identifying the most significant hits. Since inferred gene effects are ordered, this allows us to identify the strongest hits via magnitude, while comparing them in relation to the rest of the genes in the screen.
 
@@ -203,3 +205,9 @@ plot_mu_beta1(biscuit_fit, 'Zc3h12a')
 ## Conclusion
 
 `biscuit` provides a robust workflow for analysis of CRISPR screens, combining Bayesian inference and intuitive visualizations to identify significant hits and quantify uncertainty at both the gene and guide levels.
+
+## References
+
+[1] Wei J, Long L, Zheng W, Dhungana Y, Lim SA, Guy C, Wang Y, Wang Y-D, Qian C, Xu B, et al.\
+*Targeting REGNASE-1 programs long-lived effector T cells for cancer therapy.*\
+Nature. 2019;576(7787):471-476. <doi:10.1038/s41586-019-1821-z>

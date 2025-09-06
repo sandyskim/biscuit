@@ -319,17 +319,17 @@
     },
     "cmdstanr": {
       "Package": "cmdstanr",
-      "Version": "0.8.0",
+      "Version": "0.9.0",
       "Source": "Repository",
       "Title": "R Interface to 'CmdStan'",
-      "Date": "2024-05-18",
+      "Date": "2025-03-30",
       "Authors@R": "c(person(given = \"Jonah\", family = \"Gabry\", role = \"aut\", email = \"jsg2201@columbia.edu\"), person(given = \"Rok\", family = \"Češnovar\", role = \"aut\", email = \"rok.cesnovar@fri.uni-lj.si\"), person(given = \"Andrew\", family = \"Johnson\", role = c(\"aut\", \"cre\"), email = \"andrew.johnson@arjohnsonau.com\", comment = c(ORCID = \"0000-0001-7000-8065\")), person(given = \"Steve\", family = \"Bronder\", role = \"aut\"), person(given = \"Ben\", family = \"Bales\", role = \"ctb\"), person(given = \"Mitzi\", family = \"Morris\", role = \"ctb\"), person(given = \"Mikhail\", family = \"Popov\", role = \"ctb\"), person(given = \"Mike\", family = \"Lawrence\", role = \"ctb\"), person(given = c(\"William\", \"Michael\"), family = \"Landau\", role = \"ctb\", email = \"will.landau@gmail.com\", comment = c(ORCID = \"0000-0003-1878-3253\")), person(given = \"Jacob\", family = \"Socolar\", role = \"ctb\"), person(given = \"Martin\", family = \"Modrák\", role = \"ctb\"), person(given = \"Ven\", family = \"Popov\", role = \"ctb\") )",
       "Description": "A lightweight interface to 'Stan' <https://mc-stan.org>. The 'CmdStanR' interface is an alternative to 'RStan' that calls the command line interface for compilation and running algorithms instead of interfacing with C++ via 'Rcpp'. This has many benefits including always being compatible with the latest version of Stan, fewer installation errors, fewer unexpected crashes in RStudio, and a more permissive license.",
       "License": "BSD_3_clause + file LICENSE",
       "URL": "https://mc-stan.org/cmdstanr/, https://discourse.mc-stan.org",
       "BugReports": "https://github.com/stan-dev/cmdstanr/issues",
       "Encoding": "UTF-8",
-      "RoxygenNote": "7.3.1",
+      "RoxygenNote": "7.3.2",
       "Roxygen": "list(markdown = TRUE, r6 = FALSE)",
       "SystemRequirements": "CmdStan (https://mc-stan.org/users/interfaces/cmdstan)",
       "Depends": [
@@ -355,12 +355,12 @@
         "Rcpp"
       ],
       "VignetteBuilder": "knitr",
-      "Repository": "https://bbsbayes.r-universe.dev",
+      "Repository": "https://stan-dev.r-universe.dev",
       "RemoteUrl": "https://github.com/stan-dev/cmdstanr",
-      "RemoteRef": "v0.8.0",
-      "RemoteSha": "12fe0f8fd35226dadf3abc50de726537dc9ea475",
+      "RemoteRef": "v0.9.0",
+      "RemoteSha": "da99e2ba954658bdad63bffb738c4444c33a4e0e",
       "NeedsCompilation": "no",
-      "Author": "Jonah Gabry [aut], Rok Češnovar [aut], Andrew Johnson [aut, cre] (<https://orcid.org/0000-0001-7000-8065>), Steve Bronder [aut], Ben Bales [ctb], Mitzi Morris [ctb], Mikhail Popov [ctb], Mike Lawrence [ctb], William Michael Landau [ctb] (<https://orcid.org/0000-0003-1878-3253>), Jacob Socolar [ctb], Martin Modrák [ctb], Ven Popov [ctb]",
+      "Author": "Jonah Gabry [aut], Rok Češnovar [aut], Andrew Johnson [aut, cre] (ORCID: <https://orcid.org/0000-0001-7000-8065>), Steve Bronder [aut], Ben Bales [ctb], Mitzi Morris [ctb], Mikhail Popov [ctb], Mike Lawrence [ctb], William Michael Landau [ctb] (ORCID: <https://orcid.org/0000-0003-1878-3253>), Jacob Socolar [ctb], Martin Modrák [ctb], Ven Popov [ctb]",
       "Maintainer": "Andrew Johnson <andrew.johnson@arjohnsonau.com>"
     },
     "cpp11": {
@@ -721,7 +721,7 @@
     },
     "ggridges": {
       "Package": "ggridges",
-      "Version": "0.5.6",
+      "Version": "0.5.7",
       "Source": "Repository",
       "Type": "Package",
       "Title": "Ridgeline Plots in 'ggplot2'",
@@ -733,7 +733,7 @@
         "R (>= 3.2)"
       ],
       "Imports": [
-        "ggplot2 (>= 3.4.0)",
+        "ggplot2 (>= 3.5.0)",
         "grid (>= 3.0.0)",
         "scales (>= 0.4.1)",
         "withr (>= 2.1.1)"
@@ -753,10 +753,10 @@
       ],
       "VignetteBuilder": "knitr",
       "Collate": "'data.R' 'ggridges.R' 'geoms.R' 'geomsv.R' 'geoms-gradient.R' 'geom-density-line.R' 'position.R' 'scale-cyclical.R' 'scale-point.R' 'scale-vline.R' 'stats.R' 'theme.R' 'utils_ggplot2.R' 'utils.R'",
-      "RoxygenNote": "7.2.3",
+      "RoxygenNote": "7.3.2",
       "Encoding": "UTF-8",
       "NeedsCompilation": "no",
-      "Author": "Claus O. Wilke [aut, cre] (<https://orcid.org/0000-0002-7470-9261>)",
+      "Author": "Claus O. Wilke [aut, cre] (ORCID: <https://orcid.org/0000-0002-7470-9261>)",
       "Maintainer": "Claus O. Wilke <wilke@austin.utexas.edu>",
       "Repository": "CRAN"
     },
