@@ -4,12 +4,20 @@
 \alias{trim_dough}
 \title{filter targeting guide counts}
 \usage{
-trim_dough(dough, min_counts = 30, min_guides_per_gene = 2, verbose = TRUE)
+trim_dough(
+  dough,
+  min_per_sample = 1,
+  min_prop = 0.2,
+  min_guides_per_gene = 2,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{dough}{dough object with $data: $data$counts, $data$row_data, $data$col_data (optional: $data$controls)}
 
-\item{min_counts}{minimum total counts per guide across samples to keep}
+\item{min_per_sample}{minimum total counts per guide across a min_prop samples to keep}
+
+\item{min_prop}{minimum proportion of samples for min_per_sample to meet min_per_sample, number of samples is rounded to nearest integer}
 
 \item{min_guides_per_gene}{minimum number of guides per gene to keep the gene}
 

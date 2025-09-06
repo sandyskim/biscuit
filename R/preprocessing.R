@@ -69,12 +69,13 @@ make_dough <- function(counts, guide_to_gene, sample_design, controls = NULL) {
 #' filter targeting guide counts
 #'
 #' @param dough dough object with $data: $data$counts, $data$row_data, $data$col_data (optional: $data$controls)
-#' @param min_counts minimum total counts per guide across samples to keep
+#' @param min_per_sample minimum total counts per guide across a min_prop samples to keep
+#' @param min_prop minimum proportion of samples for min_per_sample to meet min_per_sample, number of samples is rounded to nearest integer
 #' @param min_guides_per_gene minimum number of guides per gene to keep the gene
 #' @param verbose logical to print out dimensions before and after filtering
 #' @return dough object with filtered data
 #' @export
-trim_dough <- function(dough, min_counts = 30, min_guides_per_gene = 2, verbose = TRUE) {
+trim_dough <- function(dough, min_per_sample = 1, min_prop = 0.2, min_guides_per_gene = 2, verbose = TRUE) {
 
   counts <- dough$data$counts
   row_data <- dough$data$row_data
@@ -84,15 +85,18 @@ trim_dough <- function(dough, min_counts = 30, min_guides_per_gene = 2, verbose 
   # indicate which guides are non-targeting controls
   is_ntc <- row_data$sgRNA %in% controls$guide
 
-  # filter targeting guides by minimum count across all samples
-  keep_counts <- rowSums(counts) >= min_counts
+  # filtering all zero counts
+  keep_zero <- rowSums(counts) > 0
+
+  # filter targeting guides by minimum count across a proportion of samples, rounded to the nearest integer
+  keep_counts <- rowSums(counts >= min_per_sample) >= round(min_prop * ncol(counts))
 
   # filter genes by minimum guide per gene
   gene_table <- table(row_data$gene)
   keep_genes <- row_data$gene %in% names(gene_table[gene_table >= min_guides_per_gene])
 
   # keep guides that satisfy counts and gene rules, or are NT controls
-  keep <- (keep_counts & keep_genes) | is_ntc
+  keep <- (keep_counts & keep_zero & keep_genes) | is_ntc
 
   counts_filtered <- counts[keep, , drop = FALSE]
   row_data_filtered <- row_data[keep, , drop = FALSE]
@@ -122,7 +126,8 @@ trim_dough <- function(dough, min_counts = 30, min_guides_per_gene = 2, verbose 
             "; after: ", nrow(row_data_filtered))
     message("genes before: ", length(unique(row_data$gene)),
             "; after: ", length(unique(row_data_filtered$gene)))
-    message("non-targeting guides preserved: ", ifelse(!is.null(nrow(controls)), nrow(controls), 'no non-targeting guides were provided'))
+    message("non-targeting controls preserved: ",
+            ifelse(!is.null(nrow(controls)), nrow(controls), 'no non-targeting guides were provided'))
   }
 
   return(dough)

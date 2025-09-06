@@ -7,7 +7,8 @@
 #' @return p ggplot object
 #' @export
 plot_counts_violin <- function(dough, normalize = TRUE) {
-  if (is.null(dough$data$counts)) stop("no counts found")
+  if (is.null(dough$data$counts))
+    stop("no counts found")
 
   if (normalize) {
     norm_counts <- normalize_counts(dough)
@@ -26,8 +27,14 @@ plot_counts_violin <- function(dough, normalize = TRUE) {
   }
 
   counts$guide <- rownames(counts)
-  counts <- pivot_longer(counts, -guide, names_to = "sample", values_to = "counts")
-  p <- ggplot(counts, aes(x = sample, y = log2(counts + 1), fill = sample)) +
+  counts <-
+    pivot_longer(counts,-guide, names_to = "sample", values_to = "counts")
+  p <-
+    ggplot(counts, aes(
+      x = sample,
+      y = log2(counts + 1),
+      fill = sample
+    )) +
     geom_violin(trim = FALSE, alpha = 0.5) +
     geom_boxplot(width = 0.1, outlier.size = 0.5) +
     theme_minimal() +
@@ -44,7 +51,8 @@ plot_counts_violin <- function(dough, normalize = TRUE) {
 #' @return p ggplot object
 #' @export
 plot_counts_density <- function(dough, normalize = TRUE) {
-  if (is.null(dough$data$counts)) stop("no counts found")
+  if (is.null(dough$data$counts))
+    stop("no counts found")
 
   if (normalize) {
     norm_counts <- normalize_counts(dough)
@@ -62,7 +70,8 @@ plot_counts_density <- function(dough, normalize = TRUE) {
   }
 
   counts$guide <- rownames(counts)
-  counts <- pivot_longer(counts, -guide, names_to = "sample", values_to = "count")
+  counts <-
+    pivot_longer(counts,-guide, names_to = "sample", values_to = "count")
 
   p <- ggplot(counts, aes(x = log2(count + 1), fill = sample)) +
     geom_density(alpha = 0.5) +
@@ -78,12 +87,14 @@ plot_counts_density <- function(dough, normalize = TRUE) {
 #' @return p ggplot object
 #' @export
 plot_sample_correlation <- function(dough) {
-  if (is.null(dough$data$counts)) stop("no counts found")
+  if (is.null(dough$data$counts))
+    stop("no counts found")
 
   norm_counts <- normalize_counts(dough)
   log_norm <- log2(norm_counts + 1)
   corr <- cor(norm_counts, method = "pearson")
-  p <- pheatmap(corr, main = 'sample-wise log-normalized counts correlation')
+  p <-
+    pheatmap(corr, main = 'sample-wise log-normalized counts correlation')
 
   return(p)
 }
@@ -94,7 +105,8 @@ plot_sample_correlation <- function(dough) {
 #' @return p ggplot object
 #' @export
 plot_count_logfc <- function(dough) {
-  if (is.null(dough$data$counts)) stop("no counts found")
+  if (is.null(dough$data$counts))
+    stop("no counts found")
 
   sample_design <- dough$data$col_data$design
   guide_names <- dough$data$row_data$sgRNA
@@ -107,7 +119,8 @@ plot_count_logfc <- function(dough) {
   control_samples <- which(sample_design == "control")
   treatment_samples <- which(sample_design == "treatment")
 
-  if (length(control_samples) == 0 | length(treatment_samples) == 0) {
+  if (length(control_samples) == 0 |
+      length(treatment_samples) == 0) {
     stop("need both control and treatment samples in sample design")
   }
 
@@ -116,8 +129,10 @@ plot_count_logfc <- function(dough) {
   norm_counts <- log2(norm_counts + 1)
 
   # average across replicates
-  control_mean <- rowMeans(norm_counts[, control_samples, drop = FALSE])
-  treatment_mean <- rowMeans(norm_counts[, treatment_samples, drop = FALSE])
+  control_mean <-
+    rowMeans(norm_counts[, control_samples, drop = FALSE])
+  treatment_mean <-
+    rowMeans(norm_counts[, treatment_samples, drop = FALSE])
 
   # calculate log fold change
   logFC <- treatment_mean - control_mean
@@ -142,24 +157,28 @@ plot_count_logfc <- function(dough) {
 #' @return ggplot object
 #' @export
 plot_guides_per_gene <- function(dough) {
-  if (is.null(dough$data$row_data)) stop("no guide-to-gene mapping found")
+  if (is.null(dough$data$row_data))
+    stop("no guide-to-gene mapping found")
 
   guides <- as.data.frame(dough$data$row_data)
 
   # filter out non-targeting guides if ntc exists
   if (!is.null(dough$data$controls)) {
-    guides <- guides[!guides$sgRNA %in% dough$data$controls$guide, , drop = FALSE]
+    guides <-
+      guides[!guides$sgRNA %in% dough$data$controls$guide, , drop = FALSE]
   }
 
   guides_per_gene <- as.data.frame(table(guides$gene))
   colnames(guides_per_gene) <- c("gene", "n_guides")
 
   p <- ggplot(guides_per_gene, aes(x = n_guides)) +
-    geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
-    labs(
-      title = "distribution of guides per gene",
-      x = "# guides per gene", y = "# genes"
+    geom_histogram(
+      binwidth = 1,
+      fill = "steelblue",
+      color = "white"
     ) +
+    labs(title = "distribution of guides per gene",
+         x = "# guides per gene", y = "# genes") +
     theme_minimal()
 
   return(p)
@@ -173,12 +192,15 @@ plot_guides_per_gene <- function(dough) {
 #' @return ggplot object
 #' @export
 plot_guide_density <- function(biscuit) {
-  if (is.null(biscuit$results$beta1)) stop("no beta1 results found")
+  if (is.null(biscuit$results$beta1))
+    stop("no beta1 results found")
 
   # annotate sgRNAs as targeting or non-targeting
   beta1_summary <- biscuit$results$beta1 %>%
-    mutate(control = if(!is.null(biscuit$data$controls)) {
-      ifelse(sgRNA %in% biscuit$data$controls$guide, "non-targeting", "targeting")
+    mutate(control = if (!is.null(biscuit$data$controls)) {
+      ifelse(sgRNA %in% biscuit$data$controls$guide,
+             "non-targeting",
+             "targeting")
     } else {
       "targeting"
     })
@@ -204,25 +226,22 @@ plot_guide_density <- function(biscuit) {
 #' @return ggplot object
 #' @export
 plot_guide_violin <- function(biscuit) {
-  if (is.null(biscuit$results$beta1)) stop("no beta1 results found")
+  if (is.null(biscuit$results$beta1))
+    stop("no beta1 results found")
 
   beta1_summary <- biscuit$results$beta1 %>%
-    mutate(
-      type = ifelse(
-        sgRNA %in% biscuit$data$controls$guide,
-        "non-targeting",
-        "targeting"
-      )
-    )
+    mutate(type = ifelse(
+      sgRNA %in% biscuit$data$controls$guide,
+      "non-targeting",
+      "targeting"
+    ))
 
   p <- ggplot(beta1_summary, aes(x = type, y = mean, fill = type)) +
     geom_violin(trim = FALSE, alpha = 0.5) +
     geom_boxplot(width = 0.1, outlier.shape = NA) +
-    labs(
-      x = NULL,
-      y = "posterior mean guide effect (beta1)",
-      fill = 'sgRNA type'
-    ) +
+    labs(x = NULL,
+         y = "posterior mean guide effect (beta1)",
+         fill = 'sgRNA type') +
     theme_minimal()
 
   return(p)
@@ -236,48 +255,53 @@ plot_guide_violin <- function(biscuit) {
 #' @param top_n number of top genes to label
 #' @return ggplot object
 #' @export
-plot_gene_rank <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
-  if (is.null(biscuit$results$mu)) stop("no mu results found")
+plot_gene_rank <-
+  function(biscuit,
+           lfsr_threshold = 0.05,
+           top_n = 10) {
+    if (is.null(biscuit$results$mu))
+      stop("no mu results found")
 
-  mu_summary <- biscuit$results$mu %>%
-    arrange(desc(mean)) %>%
-    mutate(
-      rank = row_number(),
-      category = case_when(
-        lfsr < lfsr_threshold & mean > 0 ~ "positive",
-        lfsr < lfsr_threshold & mean < 0 ~ "negative",
-        TRUE ~ "not significant"
+    mu_summary <- biscuit$results$mu %>%
+      arrange(desc(mean)) %>%
+      mutate(
+        rank = row_number(),
+        category = case_when(
+          lfsr < lfsr_threshold & mean > 0 ~ "positive",
+          lfsr < lfsr_threshold & mean < 0 ~ "negative",
+          TRUE ~ "not significant"
+        )
       )
-    )
 
-  # pick top_n genes with lowest lfsr
-  top_genes <- mu_summary %>%
-    filter(lfsr < lfsr_threshold) %>%
-    arrange(desc(abs(mean))) %>%
-    head(top_n)
+    # pick top_n genes with lowest lfsr
+    top_genes <- mu_summary %>%
+      filter(lfsr < lfsr_threshold) %>%
+      arrange(desc(abs(mean))) %>%
+      head(top_n)
 
-  ggplot(mu_summary, aes(x = rank, y = mean, color = category)) +
-    geom_point(alpha = 0.5) +
-    scale_color_manual(
-      values = c(
+    ggplot(mu_summary, aes(x = rank, y = mean, color = category)) +
+      geom_point(alpha = 0.5) +
+      scale_color_manual(values = c(
         "not significant" = "grey",
         "positive" = "#F8766D",
         "negative" = "#00BFC4"
-      )
-    ) +
-    geom_text_repel(
-      data = top_genes, aes(label = gene),
-      nudge_y = 0.05 * max(mu_summary$mean),
-      size = 3, segment.alpha = 0.5, max.overlaps = 20,
-      show.legend = FALSE
-    ) +
-    labs(
-      x = "gene rank",
-      y = "posterior mean gene effect (mu)",
-      color = paste0("significance (lfsr < ", lfsr_threshold, ")")
-    ) +
-    theme_minimal()
-}
+      )) +
+      geom_text_repel(
+        data = top_genes,
+        aes(label = gene),
+        nudge_y = 0.05 * max(mu_summary$mean),
+        size = 3,
+        segment.alpha = 0.5,
+        max.overlaps = 20,
+        show.legend = FALSE
+      ) +
+      labs(
+        x = "gene rank",
+        y = "posterior mean gene effect (mu)",
+        color = paste0("significance (lfsr < ", lfsr_threshold, ")")
+      ) +
+      theme_minimal()
+  }
 
 #'plot volcano plot for inferred gene-level effects
 #'
@@ -286,47 +310,61 @@ plot_gene_rank <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
 #' @param top_n number of top genes to label
 #' @return ggplot object
 #' @export
-plot_gene_volcano <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
-  if (is.null(biscuit$results$mu)) stop("no mu results found")
-  mu_summary <- biscuit$results$mu
+plot_gene_volcano <-
+  function(biscuit,
+           lfsr_threshold = 0.05,
+           top_n = 10) {
+    if (is.null(biscuit$results$mu))
+      stop("no mu results found")
+    mu_summary <- biscuit$results$mu
 
-  # flag significant genes
-  mu_summary <- mu_summary %>%
-    mutate(category = case_when(
-      lfsr < lfsr_threshold & mean > 0 ~ "positive",
-      lfsr < lfsr_threshold & mean < 0 ~ "negative",
-      TRUE ~ "not significant"
-    ))
+    # flag significant genes
+    mu_summary <- mu_summary %>%
+      mutate(
+        category = case_when(
+          lfsr < lfsr_threshold & mean > 0 ~ "positive",
+          lfsr < lfsr_threshold & mean < 0 ~ "negative",
+          TRUE ~ "not significant"
+        )
+      )
 
-  # select top_n genes by effect magnitude for labeling
-  top_genes <- mu_summary %>%
-    filter(lfsr < lfsr_threshold) %>%
-    arrange(desc(abs(mean))) %>%
-    head(top_n)
+    # select top_n genes by effect magnitude for labeling
+    top_genes <- mu_summary %>%
+      filter(lfsr < lfsr_threshold) %>%
+      arrange(desc(abs(mean))) %>%
+      head(top_n)
 
-  # plot
-  p <- ggplot(mu_summary, aes(x = mean, y = -log10(pmax(lfsr, 1e-5)), color = category)) +
-    geom_point(alpha = 0.5) +
-    coord_cartesian(clip = "off") +
-    scale_color_manual(values = c(
-      "not significant" = "grey",
-      "positive" = "#F8766D",
-      "negative" = "#00BFC4"
-    )) +
-    theme_minimal() +
-    labs(x = "posterior mean gene effect (mu)", y = "-log10(lfsr)",
-         color = paste0("significance (lfsr < ", lfsr_threshold, ")")) +
-    geom_text_repel(
-      data = top_genes,
-      aes(label = gene),
-      size = 3,
-      max.overlaps = 20,
-      show.legend = FALSE
-    ) +
-    theme(legend.position = "right")
+    # plot
+    p <-
+      ggplot(mu_summary, aes(
+        x = mean,
+        y = -log10(pmax(lfsr, 1e-5)),
+        color = category
+      )) +
+      geom_point(alpha = 0.5) +
+      coord_cartesian(clip = "off") +
+      scale_color_manual(values = c(
+        "not significant" = "grey",
+        "positive" = "#F8766D",
+        "negative" = "#00BFC4"
+      )) +
+      theme_minimal() +
+      labs(
+        x = "posterior mean gene effect (mu)",
+        y = "-log10(lfsr)",
+        color = paste0("significance (lfsr < ", lfsr_threshold, ")")
+      ) +
+      geom_text_repel(
+        data = top_genes,
+        aes(label = gene),
+        size = 3,
+        max.overlaps = 20,
+        show.legend = FALSE
+      ) +
+      theme(legend.position = "right")
 
-  return(p)
-}
+    return(p)
+  }
 
 #' plot stacked plot of posterior densities of a given gene and the guides that target it
 #'
@@ -335,28 +373,38 @@ plot_gene_volcano <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
 #' @return ggplot object
 #' @export
 plot_mu_beta1_density <- function(biscuit, gene_name) {
-  if (is.null(biscuit$results$mu)) stop("no mu results found")
-  if (is.null(biscuit$results$beta1)) stop("no beta1 results found")
+  if (is.null(biscuit$results$mu))
+    stop("no mu results found")
+  if (is.null(biscuit$results$beta1))
+    stop("no beta1 results found")
 
   # find gene index in row_data
-  unique_genes <- unique(biscuit$data$row_data[,2])
+  unique_genes <- unique(biscuit$data$row_data[, 2])
   gene_index <- which(unique_genes == gene_name)
-  if (length(gene_index) == 0) stop("gene not found in biscuit$data$row_data")
+  if (length(gene_index) == 0)
+    stop("gene not found in biscuit$data$row_data")
 
   # extract posterior draws for the gene effect
   mu_col <- paste0("mu[", gene_index, "]")
   mu_draws <- data.frame(
-    value = as.data.frame(biscuit$fit$posterior)[, mu_col, drop = TRUE], # drop=TRUE returns a vector
+    value = as.data.frame(biscuit$fit$posterior)[, mu_col, drop = TRUE],
+    # drop=TRUE returns a vector
     label = gene_name,
     type  = "gene",
     stringsAsFactors = FALSE
   )
 
   # extract posterior draws for all guides targeting this gene
-  guides_idx <- which(biscuit$data$row_data[,2] == gene_name)
+  guides_idx <- which(biscuit$data$row_data[, 2] == gene_name)
   guide_names <- biscuit$data$row_data[guides_idx, 1]
 
-  beta1_draws <- data.frame(value = numeric(0), label = character(0), type = character(0), stringsAsFactors = FALSE)
+  beta1_draws <-
+    data.frame(
+      value = numeric(0),
+      label = character(0),
+      type = character(0),
+      stringsAsFactors = FALSE
+    )
 
   for (i in seq_along(guides_idx)) {
     idx <- guides_idx[i]
@@ -374,7 +422,8 @@ plot_mu_beta1_density <- function(biscuit, gene_name) {
   draws <- bind_rows(mu_draws, beta1_draws)
 
   # reorder so mu is first
-  draws$label <- factor(draws$label, levels = rev(c(gene_name, guide_names)))
+  draws$label <-
+    factor(draws$label, levels = rev(c(gene_name, guide_names)))
 
   # plot stacked densities
   ggplot(draws, aes(x = value, y = label, fill = type)) +
@@ -395,8 +444,10 @@ plot_mu_beta1_density <- function(biscuit, gene_name) {
 #' @return ggplot object
 #' @export
 plot_phi_gamma_density <- function(biscuit) {
-  if (is.null(biscuit$results$phi)) stop("no phi results found")
-  if (is.null(biscuit$results$gamma)) stop("no gamma results found")
+  if (is.null(biscuit$results$phi))
+    stop("no phi results found")
+  if (is.null(biscuit$results$gamma))
+    stop("no gamma results found")
 
   # phi and gamma means
   phi_means <- biscuit$results$phi$mean
@@ -406,11 +457,9 @@ plot_phi_gamma_density <- function(biscuit) {
   n_samples <- length(gamma_means)
 
   # phi
-  phi <- data.frame(
-    value = phi_means,
-    label = "phi",
-    type = "phi"
-  )
+  phi <- data.frame(value = phi_means,
+                    label = "phi",
+                    type = "phi")
 
   # phi * gamma[sample]
   phi_gamma_list <- lapply(seq_len(n_samples), function(i) {
@@ -426,7 +475,11 @@ plot_phi_gamma_density <- function(biscuit) {
   # order factor so phi is on top
   phis$label <- factor(phis$label, levels = rev(unique(phis$label)))
 
-  p <- ggplot(phis, aes(x = log(value), y = label, fill = type)) +
+  p <- ggplot(phis, aes(
+    x = log(value),
+    y = label,
+    fill = type
+  )) +
     ggridges::geom_density_ridges(scale = 1.5, alpha = 0.5) +
     labs(
       x = "posterior means",
@@ -447,17 +500,20 @@ plot_phi_gamma_density <- function(biscuit) {
 #' @param lfsr_threshold threshold to highlight significant gene
 #' @return ggplot object
 #' @export
-plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
-  if (is.null(biscuit$results$mu)) stop("no mu results found")
-  if (is.null(biscuit$results$beta1)) stop("no beta1 results found")
+plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold = 0.05) {
+  if (is.null(biscuit$results$mu))
+    stop("no mu results found")
+  if (is.null(biscuit$results$beta1))
+    stop("no beta1 results found")
 
   # guides targeting the gene
   guides_idx <- which(biscuit$data$row_data$gene == gene_name)
   guide_names <- biscuit$data$row_data$guide[guides_idx]
-  if (length(guides_idx) == 0) stop("gene not found in guide-to-gene mapping")
+  if (length(guides_idx) == 0)
+    stop("gene not found in guide-to-gene mapping")
 
   # posterior draws for mu
-  unique_genes <- unique(biscuit$data$row_data[,2])
+  unique_genes <- unique(biscuit$data$row_data[, 2])
   gene_index <- which(unique_genes == gene_name)
   mu_col <- paste0("mu[", gene_index, "]")
   mu_draws <- data.frame(
@@ -471,10 +527,8 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
   mu_summary <- biscuit$results$mu
   mu_draws <- mu_draws %>%
     mutate(index = as.integer(stringr::str_extract(parameter, "\\d+"))) %>%
-    left_join(
-      mu_summary %>% select(index, lfsr),
-      by = "index"
-    ) %>%
+    left_join(mu_summary %>% select(index, lfsr),
+              by = "index") %>%
     mutate(
       category = case_when(
         value > 0 & lfsr < lfsr_threshold ~ "positive",
@@ -495,11 +549,19 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
       "positive" = "#F8766D",
       "negative" = "#00BFC4"
     )) +
-    geom_vline(xintercept = mu_mean, linetype = "dashed", size = 0.5) +
-    labs(title = paste0("posterior density for ", gene_name, " and its guides' posterior means"),
-         x = NULL,
-         y = "density",
-         fill = paste0("significance (lfsr < ", lfsr_threshold, ")")) +
+    geom_vline(xintercept = mu_mean,
+               linetype = "dashed",
+               size = 0.5) +
+    labs(
+      title = paste0(
+        "posterior density for ",
+        gene_name,
+        " and its guides' posterior means"
+      ),
+      x = NULL,
+      y = "density",
+      fill = paste0("significance (lfsr < ", lfsr_threshold, ")")
+    ) +
     theme_minimal() +
     theme(axis.text = element_blank(),
           axis.ticks = element_blank())
@@ -507,10 +569,19 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
   xmin <- min(c(mu_draws$value, beta1_summary))
   xmax <- max(c(mu_draws$value, beta1_summary))
   p2 <- ggplot() +
-    geom_rect(aes(xmin = xmin, xmax = xmax, ymin = 0, ymax = 1), fill = "grey", alpha = 0.5) +
+    geom_rect(aes(
+      xmin = xmin,
+      xmax = xmax,
+      ymin = 0,
+      ymax = 1
+    ),
+    fill = "grey",
+    alpha = 0.5) +
     geom_vline(xintercept = mu_mean, size = 2) +
     geom_vline(xintercept = beta1_summary, size = 0.5) +
-    scale_y_continuous(breaks = 0.5, labels = gene_name, limits = c(0,1)) +
+    scale_y_continuous(breaks = 0.5,
+                       labels = gene_name,
+                       limits = c(0, 1)) +
     coord_cartesian(xlim = c(xmin, xmax)) +
     labs(x = "effect size", y = NULL) +
     theme_minimal() +
@@ -531,58 +602,65 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold=0.05) {
 #' @param top_n number of top guides to label
 #' @return ggplot object
 #' @export
-plot_guide_ma <- function(biscuit, lfsr_threshold = 0.05, top_n = 10) {
-  if (is.null(biscuit$results$beta1)) stop("no beta1 results found")
+plot_guide_ma <-
+  function(biscuit,
+           lfsr_threshold = 0.05,
+           top_n = 10) {
+    if (is.null(biscuit$results$beta1))
+      stop("no beta1 results found")
 
-  # get beta1 summary
-  beta1_summary <- biscuit$results$beta1
+    # get beta1 summary
+    beta1_summary <- biscuit$results$beta1
 
-  # normalized counts per guide
-  norm_counts <- normalize_counts(biscuit)
+    # normalized counts per guide
+    norm_counts <- normalize_counts(biscuit)
 
-  # compute average abundance per guide
-  avg_abundance <- log2(rowMeans(norm_counts) + 1)
+    # compute average abundance per guide
+    avg_abundance <- log2(rowMeans(norm_counts) + 1)
 
-  # combine
-  beta1_summary <- beta1_summary %>%
-    mutate(
-      A = avg_abundance[index],
-      M = mean,
-      category = case_when(
-      lfsr < lfsr_threshold & mean > 0 ~ "positive",
-      lfsr < lfsr_threshold & mean < 0 ~ "negative",
-      TRUE ~ "not significant"
-  ))
+    # combine
+    beta1_summary <- beta1_summary %>%
+      mutate(
+        A = avg_abundance[index],
+        M = mean,
+        category = case_when(
+          lfsr < lfsr_threshold & mean > 0 ~ "positive",
+          lfsr < lfsr_threshold & mean < 0 ~ "negative",
+          TRUE ~ "not significant"
+        )
+      )
 
-  # select top_n genes by effect magnitude for labeling
-  top_guides <- beta1_summary %>%
-    filter(lfsr < lfsr_threshold) %>%
-    arrange(desc(abs(mean))) %>%
-    head(top_n)
+    # select top_n genes by effect magnitude for labeling
+    top_guides <- beta1_summary %>%
+      filter(lfsr < lfsr_threshold) %>%
+      arrange(desc(abs(mean))) %>%
+      head(top_n)
 
-  # plot
-  p <- ggplot(beta1_summary, aes(x = A, y = M, color = category)) +
-    geom_point(alpha = 0.5, size = 1.5) +
-    scale_color_manual(values = c(
-      "not significant" = "grey",
-      "positive" = "#F8766D",
-      "negative" = "#00BFC4"
-    )) +
-    geom_text_repel(
-      data = top_guides,
-      aes(label = sgRNA),
-      size = 3,
-      max.overlaps = 20,
-      show.legend = FALSE
-    ) +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
-    labs(
-      x = "mean(log2 normalized counts)",
-      y = "posterior mean guide effect (beta1)",
-      color = paste0("significance (lfsr < ", lfsr_threshold, ")"),
-      title = "guide-level MA plot"
-    ) +
-    theme_minimal()
+    # plot
+    p <- ggplot(beta1_summary, aes(x = A, y = M, color = category)) +
+      geom_point(alpha = 0.5, size = 1.5) +
+      scale_color_manual(values = c(
+        "not significant" = "grey",
+        "positive" = "#F8766D",
+        "negative" = "#00BFC4"
+      )) +
+      geom_text_repel(
+        data = top_guides,
+        aes(label = sgRNA),
+        size = 3,
+        max.overlaps = 20,
+        show.legend = FALSE
+      ) +
+      geom_hline(yintercept = 0,
+                 linetype = "dashed",
+                 color = "black") +
+      labs(
+        x = "mean(log2 normalized counts)",
+        y = "posterior mean guide effect (beta1)",
+        color = paste0("significance (lfsr < ", lfsr_threshold, ")"),
+        title = "guide-level MA plot"
+      ) +
+      theme_minimal()
 
-  return(p)
-}
+    return(p)
+  }
