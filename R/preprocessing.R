@@ -49,7 +49,7 @@ make_dough <- function(counts, guide_to_gene, sample_design, controls = NULL) {
 
   sample_design <- data.frame(
     sample = sample_design[,1],
-    design = sample_design[,2],
+    design = as.factor(sample_design[,2]),
     stringsAsFactors = FALSE
   )
 

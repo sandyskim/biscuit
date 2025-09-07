@@ -84,6 +84,9 @@ make_playdough <- function(n_genes,
     ))))
     gene_effect[1:n_effects] <- log(fold_change) * signs
 
+    guide_sd <- 0
+    ntc_sd <- 0
+
   } else if (effect_mode == "parametric") {
     # parametric gene effect (distribution with given parameters)
     gene_mu <- gene_params$mu
@@ -98,6 +101,9 @@ make_playdough <- function(n_genes,
     gene_effect[1:n_effects] <-
       abs(rnorm(n_effects, mean = gene_mu, sd = gene_sd)) * signs
 
+    guide_sd <- guide_sd
+    ntc_sd <- 0.1
+
   } else if (effect_mode == "empirical") {
     # empirical gene effect (distribution estimated from empirical data)
     lfc <-
@@ -110,11 +116,12 @@ make_playdough <- function(n_genes,
 
     gene_effect[1:n_effects] <-
       sample(lfc, n_effects, replace = TRUE)
+
+    guide_sd <- guide_sd
+    ntc_sd <- 0.1
   }
 
   # simulate guide-level effects
-  guide_sd <- guide_sd
-  ntc_sd <- 0.1
   beta1_g <- rnorm(length(gene_map[1:(n_genes * guides_per_gene)]),
                    mean = gene_effect[gene_map[1:(n_genes * guides_per_gene)]],
                    sd   = guide_sd)
@@ -136,8 +143,7 @@ make_playdough <- function(n_genes,
   targeting_indices <- 1:(n_genes * guides_per_gene)
   mu_mat[targeting_indices, treatment_indices] <-
     exp(beta0_g[targeting_indices] + beta1_g[targeting_indices])
-  mu_mat <-
-    mu_mat * matrix(size_factors,
+  mu_mat <- mu_mat * matrix(size_factors,
                     nrow = n_guides,
                     ncol = n_samples,
                     byrow = TRUE)
@@ -162,10 +168,9 @@ make_playdough <- function(n_genes,
                             paste0("treatment", 1:n_treatment))
 
   sample_design <- data.frame(sample = colnames(sim_counts),
-                              design = c(rep("control", n_control), rep("treatment", n_treatment)))
+                              design = as.factor(c(rep("control", n_control), rep("treatment", n_treatment))))
 
-  controls <-
-    data.frame(guides = guide_to_gene$sgRNA[guide_to_gene$gene == (n_genes + 1)],
+  controls <- data.frame(guides = guide_to_gene$sgRNA[guide_to_gene$gene == (n_genes + 1)],
                index = which(guide_to_gene$gene == (n_genes + 1)))
 
   playdough <- list(

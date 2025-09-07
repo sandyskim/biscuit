@@ -4,7 +4,7 @@
 #' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
 #' @return list of input data used to fit the biscuit model
 #' @export
-generate_biscuit_input <- function(dough, pseudocount=TRUE) {
+generate_biscuit_input <- function(dough, pseudocount = TRUE) {
   # extract data from dough
   counts   <- dough$data$counts
   row_data <- dough$data$row_data
@@ -24,7 +24,7 @@ generate_biscuit_input <- function(dough, pseudocount=TRUE) {
   norm_counts <- t(t(counts) / sf)
 
   # code sample conditions to 0 as control, 1 as treatment
-  design <- as.integer(factor(col_data$design)) - 1L
+  design <- as.integer(col_data$design) - 1L
 
   # indicate ntcs
   is_ntc <- as.integer(row_data$sgRNA %in% controls$guide)
@@ -59,12 +59,15 @@ generate_biscuit_input <- function(dough, pseudocount=TRUE) {
 #' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
 #' @return biscuit object, with $data and $fit
 #' @export
-fit_biscuit <- function(dough, output_dir, save_samples=TRUE, n_parallel_chains=4, seed=13, pseudocount=TRUE) {
+fit_biscuit <- function(dough, output_dir, filter = TRUE, save_samples = TRUE, n_parallel_chains = 4, seed = 13, pseudocount = TRUE) {
   # create output directory if it doesn't exist
   if (!dir.exists(output_dir)) {
     dir.create(output_dir)
   }
-
+  if (filter) {
+    message("filtering counts...")
+    dough <- trim_dough(dough)
+  }
   # generate model data input
   model_data <- knead_dough(dough, pseudocount)
 
