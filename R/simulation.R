@@ -30,11 +30,6 @@ make_playdough <- function(n_genes,
                            gene_params = list(mu = log(fold_change), sd = 0.2),
                            guide_sd = 0.2,
                            quantiles = c(0.05, 0.95)) {
-  if (is.null(counts) &
-      effect_mode == 'empirical') {
-    stop('no counts provided for empirical estimation')
-  }
-
   set.seed(seed)
   effect_mode <- match.arg(effect_mode)
   n_samples  <- n_control + n_treatment
@@ -49,6 +44,10 @@ make_playdough <- function(n_genes,
 
   # simulate guide-wise dispersion and baseline expression
   if (!is.null(counts)) {
+    if (effect_mode == 'empirical') {
+      stop('no counts provided for empirical estimation')
+    }
+
     # if provided with counts, calculate empirical estimates
     counts_mat <- as.matrix(counts)
 
@@ -126,7 +125,7 @@ make_playdough <- function(n_genes,
   mu_mat <- matrix(exp(beta0_g), nrow = n_guides, ncol = n_samples)
 
   # simulate sample-wise dispersion scalars
-  gamma <- c(exp(rnorm(n_control,-0.5, 0.25)),
+  gamma <- c(exp(rnorm(n_control, -0.5, 0.25)),
              exp(rnorm(n_treatment, 0.5, 0.25)))
 
   # simulate size factors
@@ -144,14 +143,14 @@ make_playdough <- function(n_genes,
                     byrow = TRUE)
 
   #  calculate dispersion
-  size_vec <- 1 / (phi_g * gamma)
+  size_mat <- 1 / (phi_g %o% gamma)
 
   # negative binomial count simulation
   sim_counts <- matrix(
     rnbinom(
       n_guides * n_samples,
       mu   = as.vector(mu_mat),
-      size = rep(size_vec, each = n_guides)
+      size = as.vector(size_mat)
     ),
     nrow = n_guides,
     ncol = n_samples
@@ -165,12 +164,16 @@ make_playdough <- function(n_genes,
   sample_design <- data.frame(sample = colnames(sim_counts),
                               design = c(rep("control", n_control), rep("treatment", n_treatment)))
 
+  controls <-
+    data.frame(guides = guide_to_gene$sgRNA[guide_to_gene$gene == (n_genes + 1)],
+               index = which(guide_to_gene$gene == (n_genes + 1)))
+
   playdough <- list(
     data = list(
       counts   = sim_counts,
       row_data = guide_to_gene,
       col_data = sample_design,
-      controls = guide_to_gene$sgRNA[guide_to_gene$gene == (n_genes + 1)]
+      controls = controls
     ),
     truth = list(
       significant_genes = which(gene_effect != 0),
