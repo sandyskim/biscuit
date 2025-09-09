@@ -7,12 +7,12 @@
 generate_biscuit_input(dough, pseudocount = TRUE)
 }
 \arguments{
-\item{dough}{dough object, with data stored in $data}
+\item{dough}{dough object with $data}
 
 \item{pseudocount}{logical indicating whether a pseudocount should be added to the count matrix}
 }
 \value{
-list of input data used to fit the biscuit model
+list of input data used to fit the biscuit Stan model
 }
 \description{
 generate model input data, intended for internal use

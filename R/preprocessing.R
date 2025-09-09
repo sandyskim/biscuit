@@ -47,9 +47,14 @@ make_dough <- function(counts, guide_to_gene, sample_design, controls = NULL) {
   guide_to_gene <- as.data.frame(guide_to_gene)
   colnames(guide_to_gene) <- c('sgRNA', 'gene')
 
+  design <- as.integer(as.factor(sample_design[,2]))
+  design <- case_match(design,
+             1 ~ "control",
+             2 ~ "treatment")
+
   sample_design <- data.frame(
     sample = sample_design[,1],
-    design = as.factor(sample_design[,2]),
+    design = design,
     stringsAsFactors = FALSE
   )
 
@@ -69,11 +74,11 @@ make_dough <- function(counts, guide_to_gene, sample_design, controls = NULL) {
 #' filter targeting guide counts
 #'
 #' @param dough dough object with $data: $data$counts, $data$row_data, $data$col_data (optional: $data$controls)
-#' @param min_per_sample minimum total counts per guide across a min_prop samples to keep
-#' @param min_prop minimum proportion of samples for min_per_sample to meet min_per_sample, number of samples is rounded to nearest integer
-#' @param min_guides_per_gene minimum number of guides per gene to keep the gene
-#' @param verbose logical to print out dimensions before and after filtering
-#' @return dough object with filtered data
+#' @param min_per_sample numeric, minimum total counts per guide across a min_prop samples to keep
+#' @param min_prop numeric, minimum proportion of samples for min_per_sample to meet min_per_sample, number of samples is rounded to nearest integer
+#' @param min_guides_per_gene numeric, minimum number of guides per gene to keep the gene
+#' @param verbose logical, indicating whether to print out dimensions before and after filtering
+#' @return dough object with filtered $data
 #' @export
 trim_dough <- function(dough, min_per_sample = 1, min_prop = 0.2, min_guides_per_gene = 2, verbose = TRUE) {
 

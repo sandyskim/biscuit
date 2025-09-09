@@ -7,7 +7,7 @@
 plot_count_logfc(dough)
 }
 \arguments{
-\item{dough}{dough object with $counts}
+\item{dough}{dough object with $data$counts}
 }
 \value{
 p ggplot object

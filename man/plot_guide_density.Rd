@@ -7,10 +7,10 @@
 plot_guide_density(biscuit)
 }
 \arguments{
-\item{biscuit}{a fitted biscuit object with $results$beta1 and $data$controls}
+\item{biscuit}{a fitted biscuit object with $results, $data}
 }
 \value{
-ggplot object
+p ggplot object
 }
 \description{
 plot densities of targeting vs non-targeting guide log fold changes

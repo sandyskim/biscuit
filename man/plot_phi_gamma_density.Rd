@@ -7,7 +7,7 @@
 plot_phi_gamma_density(biscuit)
 }
 \arguments{
-\item{biscuit}{a biscuit object with $results and $fit}
+\item{biscuit}{a biscuit object with $fit, $results}
 }
 \value{
 ggplot object

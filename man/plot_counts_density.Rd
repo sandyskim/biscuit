@@ -7,7 +7,7 @@
 plot_counts_density(dough, normalize = TRUE)
 }
 \arguments{
-\item{dough}{object with $data$counts}
+\item{dough}{dough object with $data$counts}
 
 \item{normalize}{logical indicating whether to normalize counts or not}
 }

@@ -1,8 +1,8 @@
 #' generate model input data, intended for internal use
 #'
-#' @param dough dough object, with data stored in $data
+#' @param dough dough object with $data
 #' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
-#' @return list of input data used to fit the biscuit model
+#' @return list of input data used to fit the biscuit Stan model
 #' @export
 generate_biscuit_input <- function(dough, pseudocount = TRUE) {
   # extract data from dough
@@ -79,7 +79,7 @@ fit_biscuit <- function(dough, output_dir, filter = TRUE, save_samples = TRUE, n
     stan_file <- system.file("stan", "crispr_screen.stan", package = "biscuit")
   }
 
-  # compile stan model
+  # compile Stan model
   mod <- cmdstan_model(stan_file)
 
   # save output into log, but also print to console
@@ -123,7 +123,7 @@ fit_biscuit <- function(dough, output_dir, filter = TRUE, save_samples = TRUE, n
 #' @return list of input data used to fit the biscuit model
 #' @export
 knead_dough <- function(dough, pseudocount=TRUE) {
-  model_data <- generate_biscuit_input (dough, pseudocount)
+  model_data <- generate_biscuit_input(dough, pseudocount=TRUE)
   return(model_data)
 }
 
@@ -137,8 +137,8 @@ knead_dough <- function(dough, pseudocount=TRUE) {
 #' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
 #' @return biscuit object, with $data and $fit
 #' @export
-bake_biscuit <- function(dough, output_dir, save_samples=TRUE, n_parallel_chains=4, seed=13, pseudocount=TRUE) {
-  biscuit <- fit_biscuit(dough, output_dir, save_samples, n_parallel_chains, seed, pseudocount)
+bake_biscuit <- function(dough, output_dir, filter = TRUE, save_samples = TRUE, n_parallel_chains = 4, seed = 13, pseudocount = TRUE) {
+  biscuit <- fit_biscuit(dough, output_dir, filter = TRUE, save_samples = TRUE, n_parallel_chains = 4, seed = 13, pseudocount = TRUE)
   return(biscuit)
 }
 

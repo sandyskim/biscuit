@@ -9,10 +9,10 @@ extract_parameters(biscuit, pars)
 \arguments{
 \item{biscuit}{fitted biscuit object}
 
-\item{pars}{single parameter base name (e.g. "mu")}
+\item{pars}{parameter name (e.g. "mu")}
 }
 \value{
-dataframe with columns: draw, parameter index, value
+data frame with columns: draw, parameter index, value
 }
 \description{
 extract posterior draws for one parameter

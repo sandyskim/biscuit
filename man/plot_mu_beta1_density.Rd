@@ -7,12 +7,12 @@
 plot_mu_beta1_density(biscuit, gene_name)
 }
 \arguments{
-\item{biscuit}{a biscuit object with $fit}
+\item{biscuit}{a biscuit object with $data, $fit}
 
 \item{gene_name}{name of gene}
 }
 \value{
-ggplot object
+p ggplot object
 }
 \description{
 plot stacked plot of posterior densities of a given gene and the guides that target it

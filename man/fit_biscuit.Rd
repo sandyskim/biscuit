@@ -7,6 +7,7 @@
 fit_biscuit(
   dough,
   output_dir,
+  filter = TRUE,
   save_samples = TRUE,
   n_parallel_chains = 4,
   seed = 13,

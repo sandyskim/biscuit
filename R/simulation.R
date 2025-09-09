@@ -38,9 +38,10 @@ make_playdough <- function(n_genes,
 
   # create guide to gene mapping
   guide_ids <- 1:n_guides
-  gene_map <-
-    c(rep(1:n_genes, each = guides_per_gene), rep(n_genes + 1, n_ntc))
-  guide_to_gene <- data.frame(sgRNA = guide_ids, gene = gene_map)
+  gene_map <- c(rep(1:n_genes, each = guides_per_gene),
+                rep(n_genes + 1, n_ntc))
+  guide_to_gene <- data.frame(sgRNA = guide_ids,
+                              gene = gene_map)
 
   # simulate guide-wise dispersion and baseline expression
   if (!is.null(counts)) {
@@ -59,8 +60,7 @@ make_playdough <- function(n_genes,
     phi_real   <- pmax(1 / (row_vars / row_means ^ 2 - 1), 1e-3)
 
     # randomly sample pairs of moments (beta0, phi)
-    moment_indices <-
-      sample(nrow(counts_mat), n_guides, replace = TRUE)
+    moment_indices <- sample(nrow(counts_mat), n_guides, replace = TRUE)
     beta0_g <- beta0_real[moment_indices]
     phi_g <- phi_real[moment_indices]
   }
@@ -76,12 +76,9 @@ make_playdough <- function(n_genes,
 
   if (effect_mode == "fixed") {
     # fixed gene effect (one numeric value)
-    signs <- sample(c(rep(-1, round(
-      n_effects * (1 - p_positive)
-    )),
-    rep(1, n_effects - round(
-      n_effects * (1 - p_positive)
-    ))))
+    signs <- sample(c(rep(-1, round(n_effects * (1 - p_positive))),
+    rep(1, n_effects - round(n_effects * (1 - p_positive)))))
+
     gene_effect[1:n_effects] <- log(fold_change) * signs
 
     guide_sd <- 0
@@ -106,16 +103,14 @@ make_playdough <- function(n_genes,
 
   } else if (effect_mode == "empirical") {
     # empirical gene effect (distribution estimated from empirical data)
-    lfc <-
-      log(row_means + 1) - median(log(row_means) + 1) # empirical log-fold change, blind to sample conditions
+    lfc <- log(row_means + 1) - median(log(row_means) + 1) # empirical log-fold change, blind to sample conditions
     if (!is.null(quantiles)) {
       # take extreme effects based on defined quantiles
       q <- quantile(lfc, probs = quantiles, na.rm = TRUE)
       lfc <- lfc[(lfc <= q[1] | lfc >= q[2])]
     }
 
-    gene_effect[1:n_effects] <-
-      sample(lfc, n_effects, replace = TRUE)
+    gene_effect[1:n_effects] <- sample(lfc, n_effects, replace = TRUE)
 
     guide_sd <- guide_sd
     ntc_sd <- 0.1
@@ -141,8 +136,9 @@ make_playdough <- function(n_genes,
   # apply treatment effect
   treatment_indices <- (n_control + 1):n_samples
   targeting_indices <- 1:(n_genes * guides_per_gene)
-  mu_mat[targeting_indices, treatment_indices] <-
-    exp(beta0_g[targeting_indices] + beta1_g[targeting_indices])
+
+  mu_mat[targeting_indices, treatment_indices] <- exp(beta0_g[targeting_indices] + beta1_g[targeting_indices])
+
   mu_mat <- mu_mat * matrix(size_factors,
                     nrow = n_guides,
                     ncol = n_samples,

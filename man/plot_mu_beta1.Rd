@@ -7,14 +7,14 @@
 plot_mu_beta1(biscuit, gene_name, lfsr_threshold = 0.05)
 }
 \arguments{
-\item{biscuit}{a biscuit object with $results and $fit}
+\item{biscuit}{a biscuit object with $fit, $results}
 
-\item{gene_name}{name of gene to look at}
+\item{gene_name}{name of gene}
 
 \item{lfsr_threshold}{threshold to highlight significant gene}
 }
 \value{
-ggplot object
+p ggplot object
 }
 \description{
 plot density plot of posterior distribution of a given gene and posterior means of guides that target it

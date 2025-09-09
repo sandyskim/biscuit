@@ -7,9 +7,9 @@
 summarize_parameters(biscuit, pars = c("mu", "beta1", "beta0", "phi", "gamma"))
 }
 \arguments{
-\item{biscuit}{fitted biscuit object}
+\item{biscuit}{biscuit object with $fit}
 
-\item{pars}{list parameters to summarize (e.g. mu, beta1)}
+\item{pars}{list parameter names to summarize (e.g. c('mu', 'beta1'))}
 }
 \value{
 biscuit object with $results
