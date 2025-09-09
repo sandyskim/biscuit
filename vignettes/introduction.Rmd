@@ -57,7 +57,7 @@ The `biscuit` workflow:
 
 To demonstrate how to use `biscuit`, we provide an example using the data from Regnase-1 screen [1].
 
-### Input
+### Load and bundle data into a `dough` object
 
 First, load in the data from the Regnase-1 screen:
 
@@ -65,11 +65,11 @@ First, load in the data from the Regnase-1 screen:
 data(regnase)
 ```
 
-To create a `dough` object, you need three inputs:
+To create a `dough` object, you need:
 
--   **Raw sequencing counts**: a matrix or data frame with `n_guides` rows and `n_samples` columns.\
--   **Guide-to-gene mapping**: a matrix or data frame with `n_guides` rows and two columns, containing the guide names and corresponding gene names.\
--   **Sample-to-condition mapping**: a matrix or data frame with `n_guides` rows and two columns, containing the sample names, which match the column names of the counts, and the corresponding experimental condition. There must be exactly two conditions, e.g., *control* and *treatment*, with the first sample being a control sample.\
+-   **Raw sequencing counts**: a matrix or data frame with `n_guides` rows and `n_samples` columns.
+-   **Guide-to-gene mapping**: a matrix or data frame with `n_guides` rows and two columns, containing the guide names and corresponding gene names.
+-   **Sample-to-condition mapping**: a matrix or data frame with `n_guides` rows and two columns, containing the sample names, which match the column names of the counts, and the corresponding experimental condition. There must be exactly two conditions, e.g., *control* and *treatment*, with the first sample being a control sample.
 -   *(Optional)* **Non-targeting controls**: a list of guide names corresponding to non-targeting controls. If your screen includes non-targeting controls, we strongly recommend including them, as they improve inference.
 
 To make a `dough` object, we call the function `make_dough()`:
@@ -85,28 +85,30 @@ dough_obj <- make_dough(
 
 `make_dough()` returns a `dough` object with `$data`, which contains the input data (counts, guide-to-gene mapping, sample design, and if applicable, names of the non-targeting controls), to prepare for quality control, model fitting and eventual downstream analysis.
 
-### Filtering data
+### Filter and preprocess the `dough` object
 
 Now that the data is organized in a `dough` object, we can filter the data before fitting the model.
 
 `biscuit` performs the following preprocessing steps:
 
-\- **Removing low-count guides**: guides with very few reads across all samples may not provide reliable information. By default, guides with a sum of \<30 counts across all samples are filtered out.
-
-\- **Filtering genes with few guides**: genes targeted by only one or two guides can be noisy. By default, genes with \<2 guides targeting it are filtered out.
+1.  **Removing low-count guides**: guides with very few reads across all samples may not provide reliable information. By default, all guides with 0 counts across all samples and guides with a sum of \<1 count across 20% of samples are filtered out.
+2.  **Filtering genes with few guides**: genes targeted by only one or two guides can be noisy. By default, genes with \<2 guides targeting it are filtered out.
 
 To preprocess the data, we call the function `trim_dough()`:
 
 ```{r}
 dough_obj <- trim_dough(
   dough_obj,
-  min_counts = 30,
-  min_guides_per_gene = 2,
+  min_per_sample = 1, 
+  min_prop = 0.2, 
+  min_guides_per_gene = 2, 
   verbose = TRUE
 )
 ```
 
-### Running `biscuit`
+Filtering can also be done while fitting the `biscuit` model.
+
+### Fit the `biscuit` model
 
 Once the `dough` object is prepared, it is ready to fit the model.
 
@@ -124,6 +126,7 @@ Note: `biscuit` performs statistical inference using MCMC sampling, which can be
 biscuit_fit <- bake_biscuit(
   dough_obj,
   output_dir,
+  filter = FALSE,
   save_samples = TRUE,
   n_parallel_chains = 4,
   seed=13,
@@ -132,7 +135,7 @@ biscuit_fit <- bake_biscuit(
 
 Once the model is finished fitting, `biscuit_fit()` converts the original `dough` object into a `biscuit` object, which contains the original input data from `dough$data` under `$data` and the posterior samples, sampling diagnostics, and sampling run time under `$fit`.
 
-### Exploring the posterior
+### Explore posterior estimates
 
 `biscuit` computes posterior summaries as well as the local false sign rate for each guide-level and gene-level effect for downstream analysis.
 

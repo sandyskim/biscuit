@@ -68,6 +68,7 @@ fit_biscuit <- function(dough, output_dir, filter = TRUE, save_samples = TRUE, n
     message("filtering counts...")
     dough <- trim_dough(dough)
   }
+
   # generate model data input
   model_data <- knead_dough(dough, pseudocount)
 
