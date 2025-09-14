@@ -58,7 +58,7 @@ make_playdough <- function(n_genes,
     row_vars  <- matrixStats::rowVars(counts_mat)
 
     beta0_real <- log(row_means + 1)
-    phi_real   <- pmax(1 / (row_vars / row_means ^ 2 - 1), 1e-3)
+    phi_real   <- pmax((row_vars - row_means) / row_means^2, 1e-3)
 
     # randomly sample pairs of moments (beta0, phi)
     moment_indices <- sample(nrow(counts_mat), n_guides, replace = TRUE)
@@ -70,6 +70,7 @@ make_playdough <- function(n_genes,
     a <- runif(1, 0, 0.3)
     b <- runif(1, 0, 10)
     phi_g <- abs(a + (b / exp(beta0_g)) + rnorm(n_guides, 0, 0.05))
+    disp_params <- list(a = a, b = b)
   }
 
   # simulate gene-level effects
@@ -182,7 +183,8 @@ make_playdough <- function(n_genes,
       mu     = gene_effect,
       phi    = phi_g,
       gamma  = gamma,
-      sf = size_factors
+      sf = size_factors,
+      disp_params = if (exists("disp_params")) disp_params else NULL
     )
   )
 
