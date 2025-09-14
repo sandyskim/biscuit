@@ -80,7 +80,7 @@ make_dough <- function(counts, guide_to_gene, sample_design, controls = NULL) {
 #' @param verbose logical, indicating whether to print out dimensions before and after filtering
 #' @return dough object with filtered $data
 #' @export
-trim_dough <- function(dough, min_per_sample = 1, min_prop = 0.2, min_guides_per_gene = 2, verbose = TRUE) {
+trim_dough <- function(dough, min_per_sample = 10, min_prop = 0.2, min_guides_per_gene = 2, verbose = TRUE) {
 
   counts <- dough$data$counts
   row_data <- dough$data$row_data

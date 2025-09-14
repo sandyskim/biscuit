@@ -54,6 +54,7 @@ make_playdough <- function(n_genes,
 
     # method of moments
     row_means <- rowMeans(counts_mat)
+    row_means <- pmax(row_means, 1e-6)
     row_vars  <- matrixStats::rowVars(counts_mat)
 
     beta0_real <- log(row_means + 1)
@@ -66,7 +67,7 @@ make_playdough <- function(n_genes,
   }
   else {
     beta0_g <- rnorm(n_guides, 5, 0.5)
-    a <- runif(1, 0, 1)
+    a <- runif(1, 0, 0.3)
     b <- runif(1, 0, 10)
     phi_g <- abs(a + (b / exp(beta0_g)) + rnorm(n_guides, 0, 0.05))
   }
@@ -90,13 +91,10 @@ make_playdough <- function(n_genes,
     gene_sd <- gene_params$sd
 
     signs <- sample(c(rep(-1, round(
-      n_effects * (1 - p_positive)
-    )),
+      n_effects * (1 - p_positive))),
     rep(1, n_effects - round(
-      n_effects * (1 - p_positive)
-    ))))
-    gene_effect[1:n_effects] <-
-      abs(rnorm(n_effects, mean = gene_mu, sd = gene_sd)) * signs
+      n_effects * (1 - p_positive)))))
+    gene_effect[1:n_effects] <- abs(rnorm(n_effects, mean = gene_mu, sd = gene_sd)) * signs
 
     guide_sd <- guide_sd
     ntc_sd <- 0.1
