@@ -66,10 +66,10 @@ make_playdough <- function(n_genes,
     phi_g <- phi_real[moment_indices]
   }
   else {
-    beta0_g <- rnorm(n_guides, 5, 0.5)
+    beta0_g <- rnorm(n_guides, log(100), 0.5)
     a <- runif(1, 0, 0.3)
     b <- runif(1, 0, 10)
-    phi_g <- abs(a + (b / exp(beta0_g)) + rnorm(n_guides, 0, 0.05))
+    phi_g <- abs(a + (b / exp(beta0_g)))
     disp_params <- list(a = a, b = b)
   }
 
@@ -79,7 +79,7 @@ make_playdough <- function(n_genes,
   if (effect_mode == "fixed") {
     # fixed gene effect (one numeric value)
     signs <- sample(c(rep(-1, round(n_effects * (1 - p_positive))),
-    rep(1, n_effects - round(n_effects * (1 - p_positive)))))
+                      rep(1, n_effects - round(n_effects * (1 - p_positive)))))
 
     gene_effect[1:n_effects] <- log(fold_change) * signs
 
@@ -93,8 +93,8 @@ make_playdough <- function(n_genes,
 
     signs <- sample(c(rep(-1, round(
       n_effects * (1 - p_positive))),
-    rep(1, n_effects - round(
-      n_effects * (1 - p_positive)))))
+      rep(1, n_effects - round(
+        n_effects * (1 - p_positive)))))
     gene_effect[1:n_effects] <- abs(rnorm(n_effects, mean = gene_mu, sd = gene_sd)) * signs
 
     guide_sd <- guide_sd
@@ -139,9 +139,9 @@ make_playdough <- function(n_genes,
   mu_mat[targeting_indices, treatment_indices] <- exp(beta0_g[targeting_indices] + beta1_g[targeting_indices])
 
   mu_mat <- mu_mat * matrix(size_factors,
-                    nrow = n_guides,
-                    ncol = n_samples,
-                    byrow = TRUE)
+                            nrow = n_guides,
+                            ncol = n_samples,
+                            byrow = TRUE)
 
   #  calculate dispersion
   size_mat <- 1 / (phi_g %o% gamma)
@@ -166,7 +166,7 @@ make_playdough <- function(n_genes,
                               design = as.factor(c(rep("control", n_control), rep("treatment", n_treatment))))
 
   controls <- data.frame(guides = guide_to_gene$sgRNA[guide_to_gene$gene == (n_genes + 1)],
-               index = which(guide_to_gene$gene == (n_genes + 1)))
+                         index = which(guide_to_gene$gene == (n_genes + 1)))
 
   playdough <- list(
     data = list(
