@@ -8,6 +8,7 @@ data {
     array[n_guides] int guide_to_gene; // guide to gene mapping or group assignments
     vector<lower=0, upper=1>[n_guides] is_ntc; // non-targeting control indicator
     vector[n_guides] mu_g; // log normalized counts for each guide
+    vector[n_guides] beta0_hat;
 }
 
 parameters {
@@ -43,11 +44,10 @@ transformed parameters {
     }
 
     // guide-wise dispersion parabolic function (ref DESeq2)
-    vector<lower=0>[n_guides] phi = exp(log(a + b / exp(mu_g)) + sigma_phi .* z_phi);
-
+    vector<lower=0>[n_guides] phi = exp(log(a + b / exp(mu_g)) + sigma_phi.* z_phi);
 
     // sample-wise dispersion deviation, constrained by sum to zero
-    vector<lower=0>[n_samples] gamma = exp(gamma_raw - mean(gamma_raw));
+    vector<lower=0>[n_samples] gamma = exp(gamma_raw) / mean(exp(gamma_raw));
 }
 
 model {
