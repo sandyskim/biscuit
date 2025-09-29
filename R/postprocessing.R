@@ -7,10 +7,7 @@
 extract_parameters <- function(biscuit, pars) {
   draws <- as.data.frame(biscuit$fit$posterior)
 
-  # select only columns for this parameter
-  matching_cols <- grep(paste0("^", pars, "\\["),
-                        colnames(draws),
-                        value = TRUE)
+  matching_cols <- grep(paste0("^", pars, "(\\[|$)"), colnames(draws), value = TRUE)
   if (length(matching_cols) == 0)
     return(data.frame())
 

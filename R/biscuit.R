@@ -34,7 +34,13 @@ generate_biscuit_input <- function(dough, pseudocount = TRUE) {
   n_genes  <- length(unique(gene_ids)) - as.integer(sum(is_ntc) > 0)
 
   control_conditions <- which(design == 0)
-  beta0_hat <- log(rowMeans(norm_counts[, control_conditions, drop = FALSE]))
+
+  if (pseudocount) {
+    mu_g = log(rowMeans(norm_counts))
+  }
+  else {
+    mu_g = log(rowMeans(norm_counts) + 1)
+  }
 
   # put together model data for biscuit
   model_data <- list(
@@ -43,11 +49,10 @@ generate_biscuit_input <- function(dough, pseudocount = TRUE) {
     n_genes       = n_genes,
     guide_to_gene = gene_ids,
     sf            = sf,
-    mu_g          = log(rowMeans(norm_counts)),
+    mu_g          = mu_g,
     is_ntc        = is_ntc,
-    x             = design,
-    y             = counts,
-    beta0_hat     = beta0_hat
+    x             = design - mean(design),
+    y             = counts
   )
 
   return(model_data)
@@ -106,7 +111,8 @@ fit_biscuit <- function(dough, output_dir, filter = TRUE, save_samples = TRUE, n
     fit = list(
       posterior = fit$draws(format='df'),
       diagnostics = fit$diagnostic_summary(),
-      runtime = fit$time()
+      runtime = fit$time(),
+      model = fit$code()
     )
   )
   class(biscuit) <- "biscuit"
