@@ -9,15 +9,17 @@ make_playdough(
   guides_per_gene,
   n_control = 2,
   n_treatment = 2,
-  p_effects = 0.2,
+  p_effects = 0.1,
   p_positive = 0.1,
   fold_change = 4,
+  expression = c(4, 6),
+  guide_efficiency = 0.8,
+  guide_sd = 0.5,
   n_ntc = 1000,
   seed = 13,
-  counts = NULL,
+  gene_params = list(mu = log(fold_change), sd = 2),
   effect_mode = c("fixed", "parametric", "empirical"),
-  gene_params = list(mu = log(fold_change), sd = 0.2),
-  guide_sd = 0.2,
+  counts = NULL,
   quantiles = c(0.05, 0.95)
 )
 }
@@ -36,17 +38,17 @@ make_playdough(
 
 \item{fold_change}{absolute fold change of non-zero effects for fixed-effect mode, default mean for parametric mode}
 
+\item{guide_sd}{optional standard deviation for guide effect simulation}
+
 \item{n_ntc}{number of non-targeting control guides}
 
 \item{seed}{integer seed for reproducibility}
 
-\item{counts}{optional matrix of raw experimental counts; if provided, will use to calculate baseline expression and guide-wise dispersion}
+\item{gene_params}{optional list for parametric mode (e.g. list(mu = log(4), sd = 0.2))}
 
 \item{effect_mode}{"fixed", "parametric", or "empirical": modes that determine how gene effects are simulated}
 
-\item{gene_params}{optional list for parametric mode (e.g. list(mu = log(4), sd = 0.2))}
-
-\item{guide_sd}{optional standard deviation for guide effect simulation}
+\item{counts}{optional matrix of raw experimental counts; if provided, will use to calculate baseline expression and guide-wise dispersion}
 
 \item{quantiles}{optional quantiles (e.g. c(0.05, 0.95)) to draw significant effects from in empirical mode}
 }

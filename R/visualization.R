@@ -95,6 +95,45 @@ plot_sample_correlation <- function(dough) {
   return(p)
 }
 
+#' plot moment estimated dispersion
+#'
+#' @param dough dough object with $data$counts
+#' @return p ggplot object
+#' @export
+plot_dispersion <- function(dough) {
+  if (is.null(dough$data$counts))
+    stop("no counts found in dough$data$counts")
+
+  counts <- as.matrix(dough$data$counts)
+
+  # calculate mean and variance per guide
+  guide_means <- rowMeans(counts)
+  guide_vars  <- matrixStats::rowVars(counts)
+
+  # method-of-moments NB dispersion
+  # phi = (variance - mean) / mean^2
+  phi_est <- pmax(((guide_vars - guide_means) / guide_means^2), 0)  # avoid negatives
+
+  df <- data.frame(
+    mean_count = guide_means,
+    phi        = phi_est,
+    guide      = dough$data$row_data$sgRNA,
+    gene       = dough$data$row_data$gene
+  )
+
+  # plot phi vs mean count
+  p <- ggplot(df, aes(x = mean_count, y = phi)) +
+    geom_point(alpha = 0.5) +
+    scale_x_log10() +  # log scale for counts
+    scale_y_log10() +  # log scale for dispersion
+    theme_minimal() +
+    xlab("mean counts per guide (log scale)") +
+    ylab("estimated dispersion (log scale)") +
+    ggtitle("method-of-moments estimate dispersion per guide")
+
+  return(p)
+}
+
 #' plot MA of guides using empirical estimates (treatment vs control)
 #'
 #' @param dough dough object with $data$counts
@@ -144,6 +183,50 @@ plot_count_logfc <- function(dough) {
 
   return(p)
 }
+
+#' plot density of empirical logFC of guides, startified by non-targeting and targeting guides
+#'
+#' @param dough dough object with $data$counts
+#' @return p ggplot object
+#' @export
+plot_logfc_density <- function(dough) {
+  if (is.null(dough$data$counts))
+    stop("no counts found")
+
+  sample_design <- dough$data$col_data$design
+  row_data <- dough$data$row_data
+
+  # sample indices
+  control_samples <- which(sample_design == "control")
+  treatment_samples <- which(sample_design == "treatment")
+  if (length(control_samples) == 0 || length(treatment_samples) == 0)
+    stop("need both control and treatment samples in sample design")
+
+  # log-normalized counts with pseudocount
+  norm_counts <- normalize_counts(dough)
+  norm_counts <- log2(norm_counts + 1)
+
+  # calculate logFC
+  control_mean <- rowMeans(norm_counts[, control_samples, drop = FALSE])
+  treatment_mean <- rowMeans(norm_counts[, treatment_samples, drop = FALSE])
+  logFC <- treatment_mean - control_mean
+
+  # guide type
+  guide_type <- ifelse(row_data$gene == max(row_data$gene), "non-targeting", "targeting")
+
+  df <- data.frame(logFC = logFC, type = guide_type)
+
+  # density plot
+  p <- ggplot(df, aes(x = logFC, fill = type)) +
+    geom_density(alpha = 0.5) +
+    theme_minimal() +
+    xlab("log2 fold change (treatment vs control)") +
+    ylab("density") +
+    ggtitle("density of logFC for targeting vs non-targeting control guides")
+
+  return(p)
+}
+
 
 #' plot histogram of number of guides per gene
 #'
@@ -429,55 +512,65 @@ plot_mu_beta1_density <- function(biscuit, gene_name) {
 #' @param biscuit a biscuit object with $fit, $results
 #' @return ggplot object
 #' @export
-plot_phi_gamma_density <- function(biscuit) {
-  if (is.null(biscuit$results$phi))
-    stop("no phi results found")
-  if (is.null(biscuit$results$gamma))
-    stop("no gamma results found")
+plot_eff_violin_gene <- function(biscuit, gene_id) {
+  #---- checks ----
+  if (is.null(biscuit$fit$posterior))
+    stop("No posterior draws found in biscuit$fit$posterior")
 
-  # phi and gamma means
-  phi_means <- biscuit$results$phi$mean
+  if (is.null(biscuit$data$guides))
+    stop("Need biscuit$data$guides with guide-to-gene mapping")
 
-  # gamma means
-  gamma_means <- biscuit$results$gamma$mean
-  n_samples <- length(gamma_means)
+  if (!("gene_id" %in% colnames(biscuit$data$guides)))
+    stop("biscuit$data$guides must contain gene_id")
 
-  # phi
-  phi <- data.frame(value = phi_means,
-                    label = "phi",
-                    type = "phi")
+  #---- extract posterior draws ----
+  # If using cmdstanr:
+  eff_array <- biscuit$fit$posterior$draws("eff")   # iter × chain × guide
 
-  # phi * gamma[sample]
-  phi_gamma_list <- lapply(seq_len(n_samples), function(i) {
-    data.frame(
-      value = phi_means * gamma_means[i],
-      label = paste0("phi * gamma[", i, "]"),
-      type = "phi * gamma"
+  # Convert to draws_df
+  eff_df <- posterior::as_draws_df(eff_array)
+  # columns look like eff[1], eff[2], ...
+
+  #---- tidy to long form ----
+  eff_long <- eff_df %>%
+    tidyr::pivot_longer(
+      tidyselect::starts_with("eff["),
+      names_to = "guide",
+      values_to = "eff"
+    ) %>%
+    dplyr::mutate(
+      guide_index = as.integer(gsub("eff\\[|\\]", "", guide))
     )
-  })
 
-  phis <- bind_rows(phi, phi_gamma_list)
+  #---- add guide annotations ----
+  guide_df <- biscuit$data$guides %>%
+    dplyr::mutate(guide_index = dplyr::row_number())
 
-  # order factor so phi is on top
-  phis$label <- factor(phis$label, levels = rev(unique(phis$label)))
+  eff_long <- eff_long %>%
+    dplyr::left_join(guide_df, by = "guide_index")
 
-  p <- ggplot(phis, aes(
-    x = log(value),
-    y = label,
-    fill = type
-  )) +
-    ggridges::geom_density_ridges(scale = 1.5, alpha = 0.5) +
-    labs(
-      x = "posterior means",
-      y = NULL,
-      title = "guide-level phi and phi * gamma across samples",
-      fill = NULL
-    ) +
+  #---- filter to the gene of interest ----
+  eff_gene <- eff_long %>%
+    dplyr::filter(gene_id == gene_id)
+
+  if (nrow(eff_gene) == 0)
+    stop(paste("No guides found for gene:", gene_id))
+
+  #---- plot ----
+  p <- ggplot(eff_gene, aes(x = guide_id, y = eff, fill = guide_id)) +
+    geom_violin(trim = FALSE, alpha = 0.5) +
+    geom_boxplot(width = 0.12, outlier.shape = NA) +
     theme_minimal() +
+    labs(
+      x = "Guide",
+      y = "Posterior eff",
+      title = paste("Posterior eff for guides of gene", gene_id)
+    ) +
     theme(legend.position = "none")
 
   return(p)
 }
+
 
 #' plot density plot of posterior distribution of a given gene and posterior means of guides that target it
 #'
@@ -486,7 +579,7 @@ plot_phi_gamma_density <- function(biscuit) {
 #' @param lfsr_threshold threshold to highlight significant gene
 #' @return p ggplot object
 #' @export
-plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold = 0.05) {
+plot_mu_beta1 <- function(biscuit, gene_name, lfdr_threshold = 0.05) {
   if (is.null(biscuit$results$mu))
     stop("no mu results found")
   if (is.null(biscuit$results$beta1))
@@ -513,12 +606,12 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold = 0.05) {
   mu_summary <- biscuit$results$mu
   mu_draws <- mu_draws %>%
     mutate(index = as.integer(stringr::str_extract(parameter, "\\d+"))) %>%
-    left_join(mu_summary %>% select(index, mean, lfsr),
+    left_join(mu_summary %>% select(index, mean, lfdr),
               by = "index") %>%
     mutate(
       category = case_when(
-        mean > 0 & lfsr < lfsr_threshold ~ "positive",
-        mean < 0 & lfsr < lfsr_threshold ~ "negative",
+        mean > 0 & lfdr < lfdr_threshold ~ "positive",
+        mean < 0 & lfdr < lfdr_threshold ~ "negative",
         TRUE ~ "not significant"
       )
     )
@@ -546,7 +639,7 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold = 0.05) {
       ),
       x = NULL,
       y = "density",
-      fill = paste0("significance (lfsr < ", lfsr_threshold, ")")
+      fill = paste0("significance (lfdr < ", lfdr_threshold, ")")
     ) +
     theme_minimal() +
     theme(axis.text = element_blank(),
@@ -581,6 +674,61 @@ plot_mu_beta1 <- function(biscuit, gene_name, lfsr_threshold = 0.05) {
 
   return(p)
 }
+
+
+#' plot violin plot of posterior distribution of efficiency for guide that target a given gene
+#'
+#' @param biscuit a biscuit object with $fit, $results
+#' @param gene_name name of gene
+#' @return p ggplot object
+#' @export
+plot_eff_violin_gene <- function(biscuit, gene_name) {
+  if (is.null(biscuit$fit$posterior))
+    stop("no posterior draws found in biscuit$fit$posterior")
+
+  if (is.null(biscuit$data$row_data$sgRNA) || is.null(biscuit$data$row_data$gene))
+    stop("biscuit$data$row_data must contain sgRNA and gene columns")
+
+  guides_of_gene <- biscuit$data$row_data$sgRNA[biscuit$data$row_data$gene == gene_name]
+
+  if (length(guides_of_gene) == 0)
+    stop(paste("no guides found for gene:", gene_name))
+
+  guide_indices <- which(biscuit$data$row_data$sgRNA %in% guides_of_gene)
+  eff_cols <- paste0("eff[", guide_indices, "]")
+
+  suppressWarnings(draws <- biscuit$fit$posterior[, eff_cols, drop = FALSE])
+
+  eff_long <- tidyr::pivot_longer(
+    draws,
+    cols = tidyselect::all_of(eff_cols),
+    names_to = "guide_index",
+    values_to = "eff"
+  )
+
+  eff_long$guide_index <- as.integer(gsub("eff\\[|\\]", "", eff_long$guide_index))
+  eff_long$sgRNA <- guides_of_gene[match(eff_long$guide_index, guide_indices)]
+
+  eff_long$sgRNA <- factor(eff_long$sgRNA,
+                           levels = guides_of_gene[order(guides_of_gene,
+                                                         decreasing = TRUE)])
+
+  p <- ggplot(eff_long, aes(x = eff, y = sgRNA, fill = sgRNA)) +
+    geom_violin(trim = FALSE, alpha = 0.5) +
+    geom_boxplot(width = 0.12, outlier.shape = NA) +
+    geom_vline(xintercept = 1, linetype = "dashed") +
+    theme_minimal() +
+    labs(
+      x = "posterior efficiency",
+      y = "guide",
+      title = paste("posterior efficiencies for guides of gene", gene_name)
+    ) +
+    theme(legend.position = "none")
+
+  return(p)
+}
+
+
 
 #' plot MA plot of guides using inferred guide effects (beta1)
 #'

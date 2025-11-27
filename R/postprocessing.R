@@ -5,7 +5,7 @@
 #' @return data frame with columns: draw, parameter index, value
 #' @export
 extract_parameters <- function(biscuit, pars) {
-  draws <- as.data.frame(biscuit$fit$posterior)
+  draws <- tibble::as_tibble(biscuit$fit$posterior)
 
   matching_cols <- grep(paste0("^", pars, "(\\[|$)"), colnames(draws), value = TRUE)
   if (length(matching_cols) == 0)
@@ -30,46 +30,75 @@ extract_parameters <- function(biscuit, pars) {
 #' @return biscuit object with $results
 #' @export
 summarize_parameters <- function(biscuit, pars = c("mu", "beta1", "beta0", "phi", "gamma")) {
-    biscuit$results <- lapply(pars, function(par) {
-      draws <- extract_parameters(biscuit, par)
-      if (nrow(draws) == 0)
-        return(NULL)
 
-      summ <- draws %>%
-        group_by(index) %>%
-        summarize(
-          mean   = mean(value),
-          median = median(value),
-          sd     = sd(value),
-          q2.5   = quantile(value, 0.025),
-          q97.5  = quantile(value, 0.975),
-          lfsr   = if (par %in% c("beta1", "mu"))
-            compute_lfsr(value)
-          else
-            NA_real_,
-          .groups = "drop"
-        ) %>%
-        arrange(index)
+  posterior <- as.data.frame(biscuit$fit$posterior)
+  row_data <- biscuit$data$row_data
+  col_data <- biscuit$data$col_data
+  genes_unique <- unique(row_data$gene)
 
-      # add identifiers
-      if (par %in% c("beta1", "beta0", "phi")) {
-        summ <- summ %>%
-          mutate(
-            sgRNA = biscuit$data$row_data$sgRNA[index],
-            gene  = biscuit$data$row_data$gene[index]
+  mu_ntc_cols <- grep("^mu_ntc", colnames(posterior))
+  tau_cols    <- grep("^tau_ntc", colnames(posterior))
+
+  mu_ntc_draws <- if (length(mu_ntc_cols)) posterior[[mu_ntc_cols[1]]] else NULL
+  tau_draws    <- if (length(tau_cols))    posterior[[tau_cols[1]]]    else NULL
+
+  biscuit$results <- lapply(pars, function(par) {
+    draws <- extract_parameters(biscuit, par)
+    if (nrow(draws) == 0) return(NULL)
+    summ <- draws %>%
+      group_by(index) %>%
+      summarize(
+        mean   = mean(value),
+        median = median(value),
+        sd     = sd(value),
+        q2.5   = quantile(value, 0.025),
+        q97.5  = quantile(value, 0.975),
+        .groups = "drop"
+      ) %>%
+      arrange(index)
+    if (par %in% c("beta1", "beta0", "phi")) {
+      summ$sgRNA <- row_data$sgRNA[summ$index]
+      summ$gene  <- row_data$gene[summ$index]
+    }
+    if (par == "beta1") {
+      beta1_cols     <- grep("^beta1\\[", colnames(posterior))
+      if (!is.null(mu_ntc_draws) && !is.null(tau_draws)) {
+        beta1_draws_matrix <- posterior[, beta1_cols, drop = FALSE]
+        lfdr <- vapply(seq_len(ncol(beta1_draws_matrix)), function(j) {
+          compute_rope_lfdr(
+            mu_g   = beta1_draws_matrix[[j]],
+            mu_ntc = mu_ntc_draws,
+            tau    = tau_draws
           )
-      } else if (par == "mu") {
-        genes <- unique(biscuit$data$row_data$gene)
-        summ <- summ %>% mutate(gene = genes[index])
-      } else if (par == "gamma") {
-        summ <-
-          summ %>% mutate(sample = biscuit$data$col_data$sample[index])
+        }, FUN.VALUE = numeric(1))
+        summ$lfdr <- lfdr
+      } else {
+        summ$lfdr <- NA_real_
       }
+    }
+    if (par == "mu") {
+      summ$gene <- genes_unique[summ$index]
+      mu_cols     <- grep("^mu\\[", colnames(posterior))
+      if (!is.null(mu_ntc_draws) && !is.null(tau_draws)) {
+        mu_draws_matrix <- posterior[, mu_cols, drop = FALSE]
+        lfdr <- vapply(seq_len(ncol(mu_draws_matrix)), function(j) {
+          compute_rope_lfdr(
+            mu_g   = mu_draws_matrix[[j]],
+            mu_ntc = mu_ntc_draws,
+            tau    = tau_draws
+          )
+        }, FUN.VALUE = numeric(1))
+        summ$lfdr <- lfdr
+      } else {
+        summ$lfdr <- NA_real_
+      }
+    }
+    if (par == "gamma") {
+      summ$sample <- biscuit$data$col_data$sample[summ$index]
+    }
+    summ
+  })
 
-      summ
-    })
-
-    names(biscuit$results) <- pars
-
-    return(biscuit)
-  }
+  names(biscuit$results) <- pars
+  return(biscuit)
+}

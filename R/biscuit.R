@@ -32,15 +32,17 @@ generate_biscuit_input <- function(dough, pseudocount = TRUE) {
   # code guide to gene mapping as integers for a numeric mapping
   gene_ids <- as.integer(factor(row_data$gene, levels = unique(row_data$gene)))
   n_genes  <- length(unique(gene_ids)) - as.integer(sum(is_ntc) > 0)
+  guide_to_gene_target <- gene_ids[!as.logical(is_ntc)]
 
-  control_conditions <- which(design == 0)
+  cond <- dough$data$col_data$design
+  treated_cols <- which(cond == "treatment")
+  control_cols <- which(cond == "control")
+  norm_counts <- sweep(dough$data$counts, 2, compute_size_factors(dough), "/")  # divide each column by its size factor
+  mean_treated <- rowMeans(norm_counts[, treated_cols, drop = FALSE])
+  mean_control <- rowMeans(norm_counts[, control_cols, drop = FALSE])
 
-  if (pseudocount) {
-    mu_g = log(rowMeans(norm_counts))
-  }
-  else {
-    mu_g = log(rowMeans(norm_counts) + 1)
-  }
+  mu_g <- as.numeric(log(rowMeans(norm_counts + 1)))
+  if(length(control_cols) == 1) {beta0_hat <- mu_g} else {beta0_hat <- as.numeric(log(mean_control + 1))}
 
   # put together model data for biscuit
   model_data <- list(
@@ -48,11 +50,12 @@ generate_biscuit_input <- function(dough, pseudocount = TRUE) {
     n_guides      = nrow(counts),
     n_genes       = n_genes,
     guide_to_gene = gene_ids,
+    y             = counts,
     sf            = sf,
+    beta0_hat     = beta0_hat,
     mu_g          = mu_g,
     is_ntc        = is_ntc,
-    x             = design - mean(design),
-    y             = counts
+    x             = design
   )
 
   return(model_data)
@@ -112,7 +115,8 @@ fit_biscuit <- function(dough, output_dir, filter = TRUE, save_samples = TRUE, n
       posterior = fit$draws(format='df'),
       diagnostics = fit$diagnostic_summary(),
       runtime = fit$time(),
-      model = fit$code()
+      model = fit$code(),
+      model_data = model_data
     )
   )
   class(biscuit) <- "biscuit"

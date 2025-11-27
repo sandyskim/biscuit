@@ -6,7 +6,7 @@
 \usage{
 trim_dough(
   dough,
-  min_per_sample = 1,
+  min_per_sample = 10,
   min_prop = 0.2,
   min_guides_per_gene = 2,
   verbose = TRUE

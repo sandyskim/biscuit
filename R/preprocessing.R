@@ -18,11 +18,11 @@ make_dough <- function(counts, guide_to_gene, sample_design, controls = NULL) {
     stop("dimension mismatch! counts has ", ncol(counts), " columns and sample_design has ", nrow(sample_design), " columns.\n",
          "length of sample to condition mapping must equal the number of samples (columns of counts).")
   }
-  if(!all.equal(colnames(counts), sample_design[,1])) {
+  if(!all.equal(colnames(counts), as.character(sample_design[,1]))) {
     stop("sample names in the sample-to-condition mapping do not align with the column names of the counts matrix.\n",
          "each column of the counts matrix must correspond to a sample listed in the mapping, in the same order")
   }
-  if(!all.equal(rownames(counts), guide_to_gene[,1])) {
+  if(!all.equal(rownames(counts), as.character(guide_to_gene[,1]))) {
     stop("guide names in the guide-to-gene mapping do not align with the row names of the counts matrix.\n",
         "each row of the counts matrix must correspond to a guide listed in the mapping, in the same order")
   }

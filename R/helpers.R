@@ -20,10 +20,7 @@ compute_size_factors <- function(dough) {
 #' @return matrix of normalized read counts
 #' @export
 normalize_counts <- function(dough) {
-  counts <- dough$data$counts
-  sf <- compute_size_factors(dough)
-  norm_counts <- t(t(counts) / sf)
-
+  norm_counts <- sweep(dough$data$counts, 2, compute_size_factors(dough), "/")
   return(norm_counts)
 }
 
@@ -39,3 +36,16 @@ compute_lfsr <- function(samples) {
 
   return(lfsr)
 }
+
+#' compute local false discovery rate (lfdr) for mu/beta1, adjusted by estimated null distribution
+#'
+#' @param samples numeric vector of posterior samples
+#' @return numeric between 0 and 1
+#' @export
+compute_rope_lfdr <- function(mu_g, mu_ntc, tau) {
+  rope_lfdr <- mean(abs(mu_g - mu_ntc) < tau)
+  return(rope_lfdr)
+}
+
+
+

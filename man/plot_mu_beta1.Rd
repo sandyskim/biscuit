@@ -4,7 +4,7 @@
 \alias{plot_mu_beta1}
 \title{plot density plot of posterior distribution of a given gene and posterior means of guides that target it}
 \usage{
-plot_mu_beta1(biscuit, gene_name, lfsr_threshold = 0.05)
+plot_mu_beta1(biscuit, gene_name, lfdr_threshold = 0.05)
 }
 \arguments{
 \item{biscuit}{a biscuit object with $fit, $results}
