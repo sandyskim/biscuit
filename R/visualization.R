@@ -212,7 +212,8 @@ plot_logfc_density <- function(dough) {
   logFC <- treatment_mean - control_mean
 
   # guide type
-  guide_type <- ifelse(row_data$gene == max(row_data$gene), "non-targeting", "targeting")
+  guide_type <- ifelse(row_data$sgRNA %in% dough$data$controls$guide,
+                       'non-targeting', 'targeting')
 
   df <- data.frame(logFC = logFC, type = guide_type)
 

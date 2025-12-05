@@ -23,13 +23,14 @@ make_playdough <- function(n_genes,
                            p_effects = 0.1,
                            p_positive = 0.1,
                            fold_change = 4,
-                           expression = c(4, 6),
+                           expression = 5,
                            guide_efficiency = 0.8,
-                           guide_sd = 0.5,
+                           guide_sd = 1,
                            n_ntc = 1000,
                            seed = 13,
-                           gene_params = list(mu = log(fold_change), sd = 2),
-                           effect_mode = c("fixed", "parametric", "empirical"),
+                           gene_params = list(mu = log(fold_change), sd = 1),
+                           disp_params = list(a = 0.1, b = 4),
+                           effect_mode = c("parametric", "fixed", "empirical"),
                            counts = NULL,
                            quantiles = c(0.05, 0.95)) {
   set.seed(seed)
@@ -69,15 +70,12 @@ make_playdough <- function(n_genes,
   }
   else {
     # beta0
-    u_raw <- runif(n_guides)
-    u_g <- expression[1] + (expression[2] - expression[1]) * (1 - u_raw^2) # adds a slight left skew exhibited in real data
-    beta0_g <- rnorm(n_guides, u_g, 0.5)
-
-    # dispersion
-    a <- 0.1
-    b <- 4
-    phi_g <- abs(a + (b / exp(beta0_g)))
-    disp_params <- list(a = a, b = b)
+    n_peak <- round(n_guides * 0.95)
+    peak <- rnorm(n_peak, mean = expression, sd = 0.75)
+    n_tail <- n_guides - n_peak
+    tail <- runif(n_tail, min = 0.1, max = expression)
+    combined <- sample(c(peak, tail))
+    beta0_g <- combined[combined >= 0]
     binding <- rbinom(n_guides, 1, p = guide_efficiency)
   }
 
@@ -90,7 +88,7 @@ make_playdough <- function(n_genes,
                       rep(1, n_effects - round(n_effects * (1 - p_positive)))))
 
     gene_effect[1:n_effects] <- log(fold_change) * signs
-    guide_sd <- 0
+    guide_sd <- rep(0, n_guides)
 
   } else if (effect_mode == "parametric") {
     # parametric gene effect (distribution with given parameters)
@@ -103,8 +101,8 @@ make_playdough <- function(n_genes,
         n_effects * (1 - p_positive)))))
 
     gene_effect[1:n_effects] <- abs(rnorm(n_effects, mean = gene_mu, sd = gene_sd)) * signs
-    guide_sd_sd <- ifelse(guide_sd < 0.2, 0.5, 0.25)
-    guide_sd <- rlnorm(n_effects, log(guide_sd), guide_sd_sd)
+    guide_sd <- rlnorm(n_effects, log(guide_sd), 0.25)
+
   } else if (effect_mode == "empirical") {
     # empirical gene effect (distribution estimated from empirical data)
     lfc <- log(row_means + 1) - median(log(row_means) + 1) # empirical log-fold change, blind to sample conditions
@@ -139,6 +137,12 @@ make_playdough <- function(n_genes,
                             nrow = n_guides,
                             ncol = n_samples,
                             byrow = TRUE)
+
+  if(effect_mode != 'empirical') {
+    a <- disp_params$a
+    b <- disp_params$b
+    phi_g = abs(a + b/(rowMeans(mu_mat)))
+  }
 
   #  calculate dispersion
   size_mat <- 1 / (phi_g)

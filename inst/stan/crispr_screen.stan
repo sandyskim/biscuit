@@ -32,7 +32,6 @@ parameters {
 transformed parameters {
     // guide efficiency / weights
     vector[n_guides] eff;
-
     { // local variables
         vector[n_guides] eff_raw = exp(sigma_eff .* z_eff);
         vector[n_genes] sum_eff = rep_vector(0, n_genes);
@@ -47,7 +46,6 @@ transformed parameters {
 
         // constrain such that mean of eff within each gene = 1
         vector[n_genes] mean_eff = sum_eff ./ count_eff;
-
         // compute eff
         for (g in 1:n_guides) {
             eff[g] = is_ntc[g] == 0 ? eff_raw[g] / mean_eff[guide_to_gene[g]] : 1;
