@@ -75,7 +75,7 @@ make_playdough <- function(n_genes,
     n_tail <- n_guides - n_peak
     tail <- runif(n_tail, min = 0.1, max = expression)
     combined <- sample(c(peak, tail))
-    beta0_g <- combined[combined >= 0]
+    beta0_g <- abs(combined)
     binding <- rbinom(n_guides, 1, p = guide_efficiency)
   }
 
@@ -101,7 +101,7 @@ make_playdough <- function(n_genes,
         n_effects * (1 - p_positive)))))
 
     gene_effect[1:n_effects] <- abs(rnorm(n_effects, mean = gene_mu, sd = gene_sd)) * signs
-    guide_sd <- rlnorm(n_effects, log(guide_sd), 0.25)
+    guide_sd <- rlnorm(n_effects, log(guide_sd), 0.5)
 
   } else if (effect_mode == "empirical") {
     # empirical gene effect (distribution estimated from empirical data)
