@@ -101,7 +101,7 @@ make_playdough <- function(n_genes,
         n_effects * (1 - p_positive)))))
 
     gene_effect[1:n_effects] <- abs(rnorm(n_effects, mean = gene_mu, sd = gene_sd)) * signs
-    guide_sd <- rlnorm(n_effects, log(guide_sd), 0.5)
+    guide_sd <- rlnorm(n_effects, log(guide_sd), 0.25)
 
   } else if (effect_mode == "empirical") {
     # empirical gene effect (distribution estimated from empirical data)
