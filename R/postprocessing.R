@@ -29,7 +29,7 @@ extract_parameters <- function(biscuit, pars) {
 #' @param pars list parameter names to summarize (e.g. c('mu', 'beta1'))
 #' @return biscuit object with $results
 #' @export
-summarize_parameters <- function(biscuit, pars = c("mu", "beta1", "beta0", "phi", "gamma")) {
+summarize_parameters <- function(biscuit, pars = c("mu", "beta1", "beta0", "phi", "eff", "mu_ntc", "tau_ntc")) {
 
   posterior <- as.data.frame(biscuit$fit$posterior)
   row_data <- biscuit$data$row_data
@@ -92,9 +92,6 @@ summarize_parameters <- function(biscuit, pars = c("mu", "beta1", "beta0", "phi"
       } else {
         summ$lfdr <- NA_real_
       }
-    }
-    if (par == "gamma") {
-      summ$sample <- biscuit$data$col_data$sample[summ$index]
     }
     summ
   })

@@ -33,13 +33,14 @@ make_dough <- function(counts, guide_to_gene, sample_design, controls = NULL) {
     ntc_idx       <- which(guide_to_gene[,1] %in% controls)
 
     new_order <- c(targeting_idx, ntc_idx)
-    counts    <- counts[new_order, , drop = FALSE]
-    guide_to_gene  <- guide_to_gene[new_order, , drop = FALSE]
 
-    # record ntc guides and their row indices in reordered counts
+    counts <- counts[new_order, , drop = FALSE]
+    guide_to_gene <- guide_to_gene[new_order, , drop = FALSE]
+
+    # controls after reordering
     controls <- data.frame(
-      guide = guide_to_gene[ntc_idx, 1],
-      index = match(ntc_idx, new_order),
+      guide = guide_to_gene[(length(targeting_idx)+1):nrow(guide_to_gene), 1],  # last rows = controls
+      index = (length(targeting_idx)+1):nrow(guide_to_gene),
       stringsAsFactors = FALSE
     )
   }
@@ -48,9 +49,7 @@ make_dough <- function(counts, guide_to_gene, sample_design, controls = NULL) {
   colnames(guide_to_gene) <- c('sgRNA', 'gene')
 
   design <- as.integer(as.factor(sample_design[,2]))
-  design <- case_match(design,
-             1 ~ "control",
-             2 ~ "treatment")
+  design <- ifelse(design == 1, "control", "treatment")
 
   sample_design <- data.frame(
     sample = sample_design[,1],
