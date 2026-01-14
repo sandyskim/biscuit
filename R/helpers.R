@@ -50,13 +50,7 @@ compute_rope_lfdr <- function(mu_g, mu_ntc, tau, mode = c('bi', 'neg', 'pos')) {
   mode = match.arg(mode)
   delta <- mu_g - mu_ntc
   if (mode == 'bi') {rope_lfdr <- mean(abs(delta) < tau)}
-  if (mode == 'neg') {
-    lfdr_null <- mean(delta < 0 & delta > -tau)
-    wrong_dir <- mean(delta > 0)
-    rope_lfdr <- max(lfdr_null, wrong_dir)}
-  if (mode == 'pos') {
-    lfdr_null <- mean(delta > 0 & delta < tau)
-    wrong_dir <- mean(delta < 0)
-    rope_lfdr <- max(lfdr_null, wrong_dir)}
+  if (mode == 'neg') {rope_lfdr <- mean(delta > -tau)}
+  if (mode == 'pos') {rope_lfdr <- mean(delta < tau) }
   return(rope_lfdr)
 }
