@@ -29,10 +29,14 @@ normalize_counts <- function(dough) {
 #' @param samples numeric vector of posterior samples
 #' @return numeric between 0 and 0.5
 #' @export
-compute_lfsr <- function(samples) {
+compute_lfsr <- function(samples, mode = c('bi', 'neg', 'pos')) {
+  mode = match.arg(mode)
   p_pos <- mean(samples >= 0)
   p_neg <- mean(samples <= 0)
-  lfsr <- min(p_pos, p_neg)
+
+  if (mode == 'bi') {lfsr <- min(p_pos, p_neg)}
+  if (mode == 'neg') {lfsr <- p_pos}
+  if (mode == 'pos') {lfsr <- p_neg}
 
   return(lfsr)
 }
@@ -42,10 +46,17 @@ compute_lfsr <- function(samples) {
 #' @param samples numeric vector of posterior samples
 #' @return numeric between 0 and 1
 #' @export
-compute_rope_lfdr <- function(mu_g, mu_ntc, tau) {
-  rope_lfdr <- mean(abs(mu_g - mu_ntc) < tau)
+compute_rope_lfdr <- function(mu_g, mu_ntc, tau, mode = c('bi', 'neg', 'pos')) {
+  mode = match.arg(mode)
+  delta <- mu_g - mu_ntc
+  if (mode == 'bi') {rope_lfdr <- mean(abs(delta) < tau)}
+  if (mode == 'neg') {
+    lfdr_null <- mean(delta < 0 & delta > -tau)
+    wrong_dir <- mean(delta > 0)
+    rope_lfdr <- max(lfdr_null, wrong_dir)}
+  if (mode == 'pos') {
+    lfdr_null <- mean(delta > 0 & delta < tau)
+    wrong_dir <- mean(delta < 0)
+    rope_lfdr <- max(lfdr_null, wrong_dir)}
   return(rope_lfdr)
 }
-
-
-

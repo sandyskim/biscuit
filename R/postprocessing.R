@@ -79,8 +79,28 @@ summarize_parameters <- function(biscuit, pars = c("mu", "beta1", "beta0", "phi"
     if (par == "mu") {
       summ$gene <- genes_unique[summ$index]
       mu_cols     <- grep("^mu\\[", colnames(posterior))
+      mu_draws_matrix <- posterior[, mu_cols, drop = FALSE]
+      lfsr <- vapply(seq_len(ncol(mu_draws_matrix)), function(j) {
+        compute_lfsr(
+          samples   = mu_draws_matrix[[j]]
+        )
+      }, FUN.VALUE = numeric(1))
+      summ$lfsr <- lfsr
+      lfsr.neg <- vapply(seq_len(ncol(mu_draws_matrix)), function(j) {
+        compute_lfsr(
+          samples   = mu_draws_matrix[[j]],
+          mode = "neg"
+        )
+      }, FUN.VALUE = numeric(1))
+      summ$lfsr.neg <- lfsr.neg
+      lfsr.pos <- vapply(seq_len(ncol(mu_draws_matrix)), function(j) {
+        compute_lfsr(
+          samples   = mu_draws_matrix[[j]],
+          mode = "pos"
+        )
+      }, FUN.VALUE = numeric(1))
+      summ$lfsr.pos <- lfsr.pos
       if (!is.null(mu_ntc_draws) && !is.null(tau_draws)) {
-        mu_draws_matrix <- posterior[, mu_cols, drop = FALSE]
         lfdr <- vapply(seq_len(ncol(mu_draws_matrix)), function(j) {
           compute_rope_lfdr(
             mu_g   = mu_draws_matrix[[j]],
@@ -89,6 +109,24 @@ summarize_parameters <- function(biscuit, pars = c("mu", "beta1", "beta0", "phi"
           )
         }, FUN.VALUE = numeric(1))
         summ$lfdr <- lfdr
+        lfdr.neg <- vapply(seq_len(ncol(mu_draws_matrix)), function(j) {
+          compute_rope_lfdr(
+            mu_g   = mu_draws_matrix[[j]],
+            mu_ntc = mu_ntc_draws,
+            tau    = tau_draws,
+            mode = 'neg'
+          )
+        }, FUN.VALUE = numeric(1))
+        summ$lfdr.neg <- lfdr.neg
+        lfdr.pos <- vapply(seq_len(ncol(mu_draws_matrix)), function(j) {
+          compute_rope_lfdr(
+            mu_g   = mu_draws_matrix[[j]],
+            mu_ntc = mu_ntc_draws,
+            tau    = tau_draws,
+            mode = 'pos'
+          )
+        }, FUN.VALUE = numeric(1))
+        summ$lfdr.pos <- lfdr.pos
       } else {
         summ$lfdr <- NA_real_
       }
