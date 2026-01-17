@@ -30,9 +30,11 @@ generate_biscuit_input <- function(dough, pseudocount = TRUE) {
   is_ntc <- as.integer(row_data$sgRNA %in% controls$guide)
 
   # code guide to gene mapping as integers for a numeric mapping
-  gene_ids <- as.integer(factor(row_data$gene, levels = unique(row_data$gene)))
-  n_genes  <- length(unique(gene_ids)) - as.integer(sum(is_ntc) > 0)
-  guide_to_gene_target <- gene_ids[!as.logical(is_ntc)]
+  # factor only over real genes
+  gene_factor <- factor(row_data$gene)
+  gene_ids <- as.integer(gene_factor)
+
+  n_genes <- length(unique(row_data$gene[!as.logical(is_ntc)]))
 
   cond <- dough$data$col_data$design
   treated_cols <- which(cond == "treatment")

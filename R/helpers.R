@@ -21,6 +21,7 @@ compute_size_factors <- function(dough) {
 #' @export
 normalize_counts <- function(dough) {
   norm_counts <- sweep(dough$data$counts, 2, compute_size_factors(dough), "/")
+
   return(norm_counts)
 }
 
@@ -29,10 +30,11 @@ normalize_counts <- function(dough) {
 #' @param samples numeric vector of posterior samples
 #' @return numeric between 0 and 0.5
 #' @export
-compute_lfsr <- function(samples, mode = c('bi', 'neg', 'pos')) {
+compute_lfsr <- function(mu_g, mu_ntc, mode = c('bi', 'neg', 'pos')) {
   mode = match.arg(mode)
-  p_pos <- mean(samples >= 0)
-  p_neg <- mean(samples <= 0)
+  delta <- mu_g - mu_ntc
+  p_pos <- mean(delta >= 0)
+  p_neg <- mean(delta <= 0)
 
   if (mode == 'bi') {lfsr <- min(p_pos, p_neg)}
   if (mode == 'neg') {lfsr <- p_pos}
