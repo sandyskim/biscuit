@@ -43,25 +43,34 @@ make_playdough <- function(n_genes,
   guide_ids <- 1:n_guides
   target_gene_map <- rep(1:n_genes, each = guides_per_gene)
 
-  # full genes
-  n_full_genes <- n_ntc %/% guides_per_gene
-  # leftover guides
-  n_leftover <- n_ntc %% guides_per_gene
+  if (n_ntc > 0) {
+    if (n_ntc >= guides_per_gene) {
+      n_full_genes <- n_ntc %/% guides_per_gene
+      n_leftover <- n_ntc %% guides_per_gene
+      neg_gene_start <- n_genes + 1
+      neg_gene_map <- rep(neg_gene_start:(neg_gene_start + n_full_genes - 1),
+                          each = guides_per_gene)
 
-  neg_gene_start <- n_genes + 1
+    } else {
+      n_full_genes <- 1
+      n_leftover <- 0
+      neg_gene_start <- n_genes + 1
+      neg_gene_map <- rep(neg_gene_start:(neg_gene_start + n_full_genes - 1),
+                          each = n_ntc)
 
-  # full pseudo-genes
-  neg_gene_map <- rep(neg_gene_start:(neg_gene_start + n_full_genes - 1),
-                      each = guides_per_gene)
+    }
 
-  # distribute leftover guides across the first few pseudo-genes
-  if (n_leftover > 0) {
-    leftover_genes <- neg_gene_start:(neg_gene_start + n_leftover - 1)
-    neg_gene_map <- c(neg_gene_map, leftover_genes)
+    # distribute leftover guides across the first few pseudo-genes
+    if (n_leftover > 0) {
+      leftover_genes <- neg_gene_start:(neg_gene_start + n_leftover - 1)
+      neg_gene_map <- c(neg_gene_map, leftover_genes)
+    }
+
+    gene_map <- c(target_gene_map, neg_gene_map)
+  } else {
+    gene_map <- target_gene_map
   }
 
-  # full gene map
-  gene_map <- c(target_gene_map, neg_gene_map)
 
   # guide to gene mapping
   guide_to_gene <- data.frame(sgRNA = guide_ids, gene = gene_map)
@@ -191,11 +200,15 @@ make_playdough <- function(n_genes,
   sample_design <- data.frame(sample = colnames(sim_counts),
                               design = as.factor(c(rep("control", n_control), rep("treatment", n_treatment))))
 
-  pseudo_genes <- (n_genes + 1):max(guide_to_gene$gene)
-  controls <- data.frame(
-    guides = guide_to_gene$sgRNA[guide_to_gene$gene %in% pseudo_genes],
-    index  = which(guide_to_gene$gene %in% pseudo_genes)
-  )
+  if (n_ntc > 0) {
+    pseudo_genes <- (n_genes + 1):max(guide_to_gene$gene)
+    controls <- data.frame(
+      guides = guide_to_gene$sgRNA[guide_to_gene$gene %in% pseudo_genes],
+      index  = which(guide_to_gene$gene %in% pseudo_genes)
+    )
+  } else {
+    controls <- NULL
+  }
 
   playdough <- list(
     data = list(
