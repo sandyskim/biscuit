@@ -1,4 +1,4 @@
-#' calculate size factors via median-of-ratios (ref. DESeq2)
+#' Calculate size factors via median-of-ratios (ref. DESeq2)
 #'
 #' @param dough dough object with $data$counts
 #' @return size factors
@@ -14,7 +14,7 @@ compute_size_factors <- function(dough) {
   return(sf)
 }
 
-#' normalize counts using the median-of-ratios method (ref. DESeq2)
+#' Normalize counts using the median-of-ratios method (ref. DESeq2)
 #'
 #' @param dough dough (or biscuit) object with $data$counts
 #' @return matrix of normalized read counts
@@ -25,34 +25,58 @@ normalize_counts <- function(dough) {
   return(norm_counts)
 }
 
-#' compute local false sign rate (lfsr)
-#'
-#' @param samples numeric vector of posterior samples
-#' @return numeric between 0 and 0.5
-#' @export
-compute_lfsr <- function(mu_g, mu_ntc, mode = c('bi', 'neg', 'pos')) {
-  mode = match.arg(mode)
-  delta <- mu_g - mu_ntc
-  p_pos <- mean(delta >= 0)
-  p_neg <- mean(delta <= 0)
 
-  if (mode == 'bi') {lfsr <- min(p_pos, p_neg)}
-  if (mode == 'neg') {lfsr <- p_pos}
-  if (mode == 'pos') {lfsr <- p_neg}
-
-  return(lfsr)
-}
-
-#' compute local false discovery rate (lfdr) for mu/beta1, adjusted by estimated null distribution
+#' Compute local false discovery rate (lfdr) and local false sign rate (lfsr) for mu/beta1, adjusted by estimated null distribution
 #'
 #' @param samples numeric vector of posterior samples
 #' @return numeric between 0 and 1
 #' @export
-compute_rope_lfdr <- function(mu_g, mu_ntc, tau, mode = c('bi', 'neg', 'pos')) {
-  mode = match.arg(mode)
-  delta <- mu_g - mu_ntc
-  if (mode == 'bi') {rope_lfdr <- mean(abs(delta) < tau)}
-  if (mode == 'neg') {rope_lfdr <- mean(delta > -tau)}
-  if (mode == 'pos') {rope_lfdr <- mean(delta < tau) }
-  return(rope_lfdr)
+compute_lfsr_from_csv <- function(csv_files, par_pattern, stan_variables, mu_ntc_col = NULL, tau_ntc_col = NULL) {
+  par_cols <- grep(par_pattern, stan_variables, value = TRUE)
+  n_pos_lfdr <- numeric(length(par_cols))
+  n_neg_lfdr <- numeric(length(par_cols))
+  n_pos_lfsr <- numeric(length(par_cols))
+  n_neg_lfsr <- numeric(length(par_cols))
+  n_two_sided <- numeric(length(par_cols))
+  n_tot <- 0L
+
+  for (f in csv_files) {
+    # strip comment lines before passing to fread
+    lines <- readLines(f)
+    data_lines <- lines[!startsWith(lines, "#")]
+    tmp <- tempfile(fileext = ".csv")
+    writeLines(data_lines, tmp)
+    on.exit(unlink(tmp), add = TRUE)
+
+    select_cols <- if (!is.null(mu_ntc_col) | !is.null(tau_ntc_col)) c(par_cols, mu_ntc_col, tau_ntc_col) else par_cols
+    chunk <- data.table::fread(tmp, select = select_cols)
+    # drop warmup draws, keeping only sampling iterations
+    if ("warmup__" %in% colnames(chunk)) {
+      chunk <- chunk[warmup__ == 0]
+    }
+    mu_draws <- as.matrix(chunk[, par_cols, with = FALSE])
+    delta <- if (!is.null(mu_ntc_col)) {
+      sweep(mu_draws, 1, chunk[[mu_ntc_col]], "-")
+    } else {
+      mu_draws
+    }
+
+    threshold <- if (!is.null(tau_ntc_col)) chunk[[tau_ntc_col]] else 0
+    n_pos_lfdr <- n_pos_lfdr + colSums(delta > threshold)
+    n_neg_lfdr <- n_neg_lfdr + colSums(delta < -threshold)
+    n_two_sided <- n_two_sided + colSums(abs(delta) < threshold)
+    n_pos_lfsr <- n_pos_lfsr + colSums(delta > 0)
+    n_neg_lfsr <- n_neg_lfsr + colSums(delta < 0)
+    n_tot <- n_tot + nrow(chunk)
+  }
+
+  data.frame(
+    variable = gsub("^(\\w+)\\.(\\d+)$", "\\1[\\2]", par_cols),
+    lfdr = n_two_sided / n_tot,
+    lfdr.pos = n_neg_lfdr / n_tot,
+    lfdr.neg = n_pos_lfdr / n_tot,
+    lfsr = pmin(n_neg_lfsr, n_pos_lfsr) / n_tot,
+    lfsr.pos = n_pos_lfsr / n_tot,
+    lfsr.neg = n_neg_lfsr / n_tot
+  )
 }

@@ -1,106 +1,88 @@
-#' generate model input data, intended for internal use
+#' Generate model input data for the biscuit Stan model
 #'
-#' @param dough dough object with $data
-#' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
-#' @return list of input data used to fit the biscuit Stan model
+#' @param dough dough object with \code{$data}
+#' @param pseudocount logical; whether to add a pseudocount of 1 to the count matrix
+#' @return named list of input data for the biscuit Stan model
 #' @export
 generate_biscuit_input <- function(dough, pseudocount = TRUE) {
-  # extract data from dough
-  counts   <- dough$data$counts
+  counts <- dough$data$counts
   row_data <- dough$data$row_data
   col_data <- dough$data$col_data
   controls <- dough$data$controls
 
-  # add pseudocount
   if (pseudocount) {
     counts <- counts + 1L
-    message("added pseudocount of 1 to counts matrix.")
+    message("Added pseudocount of 1 to counts matrix.")
   }
 
-  # estimate size factors
   sf <- compute_size_factors(dough)
-
-  # normalize counts
-  norm_counts <- t(t(counts) / sf)
-
-  # code sample conditions to 0 as control, 1 as treatment
+  norm_counts <- sweep(counts, 2, sf, "/")
   design <- as.integer(col_data$design) - 1L
-
-  # indicate ntcs
   is_ntc <- as.integer(row_data$sgRNA %in% controls$guide)
 
-  # code guide to gene mapping as integers for a numeric mapping
-  # factor only over real genes
   unique_genes <- unique(row_data$gene[!as.logical(is_ntc)])
   gene_ids <- as.integer(factor(row_data$gene, levels = unique(row_data$gene)))
   n_genes <- length(unique_genes)
 
-  cond <- dough$data$col_data$design
-  treated_cols <- which(cond == "treatment")
-  control_cols <- which(cond == "control")
-  norm_counts <- sweep(dough$data$counts, 2, compute_size_factors(dough), "/")  # divide each column by its size factor
-  mean_treated <- rowMeans(norm_counts[, treated_cols, drop = FALSE])
+  control_cols <- which(col_data$design == "control")
   mean_control <- rowMeans(norm_counts[, control_cols, drop = FALSE])
-
   mu_g <- as.numeric(log(rowMeans(norm_counts + 1)))
-  if(length(control_cols) == 1) {beta0_hat <- mu_g} else {beta0_hat <- as.numeric(log(mean_control + 1))}
+  beta0_hat <- if (length(control_cols) == 1) mu_g else as.numeric(log(mean_control + 1))
 
-  # put together model data for biscuit
-  model_data <- list(
-    n_samples     = length(design),
-    n_guides      = nrow(counts),
-    n_genes       = n_genes,
+  list(
+    n_samples = length(design),
+    n_guides = nrow(counts),
+    n_genes = n_genes,
     guide_to_gene = gene_ids,
-    y             = counts,
-    sf            = sf,
-    beta0_hat     = beta0_hat,
-    mu_g          = mu_g,
-    is_ntc        = is_ntc,
-    x             = design
+    y = counts,
+    sf = sf,
+    beta0_hat = beta0_hat,
+    mu_g = mu_g,
+    is_ntc = is_ntc,
+    x = design
   )
-
-  return(model_data)
 }
 
-#' runs biscuit
+
+#' Fit the biscuit Stan model
 #'
-#' @param dough dough object, with data stored in $data
+#' @param dough dough object with data stored in \code{$data}
 #' @param output_dir directory to save biscuit output files
-#' @param save_samples logical to indicate
-#' @param n_parallel_chains integer indicating the number chains to run in parallel
-#' @param seed integer indicating the seed for reproducibility
-#' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
-#' @return biscuit object, with $data and $fit
+#' @param filter logical; whether to filter counts before fitting
+#' @param save_samples logical; whether to save posterior draws
+#' @param n_parallel_chains integer; number of chains to run in parallel
+#' @param seed integer; seed for reproducibility
+#' @param pseudocount logical; whether to add a pseudocount to the count matrix
+#' @return biscuit object with \code{$data} and \code{$fit}
 #' @export
-fit_biscuit <- function(dough, output_dir, filter = TRUE, save_samples = TRUE, n_parallel_chains = 4, seed = 13, pseudocount = TRUE) {
-  # create output directory if it doesn't exist
-  if (!dir.exists(output_dir)) {
-    dir.create(output_dir)
-  }
+fit_biscuit <- function(dough,
+                        output_dir,
+                        filter = TRUE,
+                        save_samples = TRUE,
+                        n_parallel_chains = 4,
+                        seed = 13,
+                        pseudocount = TRUE) {
+  if (!dir.exists(output_dir)) dir.create(output_dir)
+
   if (filter) {
-    message("filtering counts...")
+    message("Filtering counts...")
     dough <- trim_dough(dough)
   }
 
-  # generate model data input
   model_data <- knead_dough(dough, pseudocount)
 
-  # pick Stan file depending on provided non-targeting controls
-  if (is.null(dough$data$controls)) {
-    message("no non-targeting controls detected, using non-targeting control free model.")
-    stan_file <- system.file("stan", "crispr_screen_no_ntcs.stan", package = "biscuit")
+  stan_file <- if (is.null(dough$data$controls)) {
+    message("No non-targeting controls detected, using NTC-free model.")
+    system.file("stan", "crispr_screen_no_ntcs.stan", package = "biscuit")
   } else {
-    stan_file <- system.file("stan", "crispr_screen.stan", package = "biscuit")
+    system.file("stan", "crispr_screen.stan", package = "biscuit")
   }
 
-  # compile Stan model
   mod <- cmdstan_model(stan_file)
 
-  # save output into log, but also print to console
   sink(file.path(output_dir, "biscuit.log"), split = TRUE)
   on.exit(sink(), add = TRUE)
 
-  # sample
   fit <- mod$sample(
     data = model_data,
     parallel_chains = n_parallel_chains,
@@ -109,52 +91,52 @@ fit_biscuit <- function(dough, output_dir, filter = TRUE, save_samples = TRUE, n
     show_messages = TRUE
   )
 
-  # create biscuit object
-  biscuit <- list(
-    data = dough$data,
-    fit = list(
-      posterior = fit$draws(format='df'),
-      diagnostics = fit$diagnostic_summary(),
-      runtime = fit$time(),
-      model = fit$code(),
-      model_data = model_data
-    )
+  # summarize and add lfdr and lfsr
+  fit_summary <- fit$summary()
+  rownames(fit_summary) <- fit_summary$variable
+
+  csv_files <- fit$output_files()
+  stan_variables <- readLines(csv_files[1]) |>
+    (\(lines) lines[!startsWith(lines, "#")])() |>
+    (\(lines) lines[1])() |>
+    strsplit(",") |>
+    unlist()
+  lfsr_all <- rbind(
+    compute_lfsr_from_csv(csv_files, "^mu\\.", stan_variables, mu_ntc_col = "mu_ntc", tau_ntc_col = "tau_ntc"),
+    compute_lfsr_from_csv(csv_files, "^beta1\\.", stan_variables)
   )
-  class(biscuit) <- "biscuit"
+  fit_summary <- merge(fit_summary, lfsr_all, by = "variable", all.x = TRUE)
 
-  dir.create(file.path(output_dir, "biscuit_output/"), recursive = TRUE, showWarnings = FALSE)
+  results = summarize_parameters(dough, fit_summary)
 
-  # save samples if indicated
+  # save outputs
+  output_path <- file.path(output_dir, "biscuit_output")
+  dir.create(output_path, recursive = TRUE, showWarnings = FALSE)
+  write.csv(fit_summary, file.path(output_path, "fit_summary.csv"))
+
+  posterior_path <- NULL
   if (save_samples) {
-    saveRDS(biscuit$fit$posterior, file.path(output_dir, "biscuit_output/posterior.Rdata"))
+    posterior_path <- file.path(output_path, "_posterior.csv")
+    con <- file(posterior_path, open = "wt")
+    on.exit(close(con), add = TRUE)
+
+    writeLines(grep("^#", readLines(csv_files[1]), invert = TRUE, value = TRUE)[1], con)
+    for (f in csv_files) {
+      lines <- readLines(f)
+      data_lines <- grep("^#", lines, invert = TRUE, value = TRUE)[-1]
+      writeLines(data_lines, con)
+    }
   }
 
-  return(biscuit)
+  list(
+      data = dough$data,
+      fit  = list(
+        diagnostics = fit$diagnostic_summary(),
+        runtime = fit$time(),
+        model = fit$code(),
+        model_data = model_data,
+        posterior_path = posterior_path
+      ),
+      results = results
+  )
 }
-
-#' generate model input data, intended for internal use (wrapper for generate_biscuit_input)
-#'
-#' @param dough dough object, with data stored in $data
-#' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
-#' @return list of input data used to fit the biscuit model
-#' @export
-knead_dough <- function(dough, pseudocount=TRUE) {
-  model_data <- generate_biscuit_input(dough, pseudocount)
-  return(model_data)
-}
-
-#' run biscuit (wrapper for run_biscuit)
-#'
-#' @param dough dough object, with data stored in $data
-#' @param output_dir directory to save biscuit output files
-#' @param save_samples logical to indicate
-#' @param n_parallel_chains integer indicating the number chains to run in parallel
-#' @param seed integer indicating the seed for reproducibility
-#' @param pseudocount logical indicating whether a pseudocount should be added to the count matrix
-#' @return biscuit object, with $data and $fit
-#' @export
-bake_biscuit <- function(dough, output_dir, filter = TRUE, save_samples = TRUE, n_parallel_chains = 4, seed = 13, pseudocount = TRUE) {
-  biscuit <- fit_biscuit(dough, output_dir, filter, save_samples, n_parallel_chains, seed, pseudocount)
-  return(biscuit)
-}
-

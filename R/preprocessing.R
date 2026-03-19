@@ -1,140 +1,126 @@
-#' make dough object from counts, guide_to_gene mapping, and design of samples (optional: list of names of non-targeting controls)
+#' Create a dough object from counts, guide-to-gene mapping, and sample design
 #'
-#' @param counts n_guides x n_samples matrix holding the raw guide/sgRNA counts in each sample
-#' @param guide_to_gene n_guides x 2 matrix holding the name of the guide/sgRNA in the first column and the name of the gene it's targeting in the second column.
-#' @param sample_design n_samples x 2 holding the name of the samples (which match the column names of the counts) in the first column and the experimental design in the second column. the first sample must be a control sample.
-#' @param controls (optional) vector containing the names of the non-targeting guides, all of which must be in the first column of guide_to_gene
-#' @return dough object, with data stored in $data
+#' @param counts n_guides x n_samples matrix of raw guide/sgRNA counts
+#' @param guide_to_gene n_guides x 2 data frame with guide names in column 1 and target gene names in column 2
+#' @param sample_design n_samples x 2 data frame with sample names in column 1 and condition in column 2;
+#'   column names must match \code{colnames(counts)}; first condition listed is treated as control
+#' @param controls optional character vector of non-targeting guide names; must appear in column 1 of \code{guide_to_gene}
+#' @return dough object with data stored in \code{$data}
 #' @export
 make_dough <- function(counts, guide_to_gene, sample_design, controls = NULL) {
-  if (length(unique(sample_design)) != 2) {
-    stop("sample design must have exactly two conditions.")
-  }
-  if (nrow(counts) != nrow(guide_to_gene)) {
-    stop("dimension mismatch! counts has ", nrow(counts), " rows and guide_to_gene mapping has ", nrow(guide_to_gene), " rows.\n",
-         "length of guide-to-gene mapping must equal the number of guides (rows of counts).")
-  }
-  if(ncol(counts) != nrow(sample_design)){
-    stop("dimension mismatch! counts has ", ncol(counts), " columns and sample_design has ", nrow(sample_design), " columns.\n",
-         "length of sample to condition mapping must equal the number of samples (columns of counts).")
-  }
-  if(!all.equal(colnames(counts), as.character(sample_design[,1]))) {
-    stop("sample names in the sample-to-condition mapping do not align with the column names of the counts matrix.\n",
-         "each column of the counts matrix must correspond to a sample listed in the mapping, in the same order")
-  }
-  if(!all.equal(rownames(counts), as.character(guide_to_gene[,1]))) {
-    stop("guide names in the guide-to-gene mapping do not align with the row names of the counts matrix.\n",
-        "each row of the counts matrix must correspond to a guide listed in the mapping, in the same order")
-  }
+  # input validation
+  if (length(unique(sample_design[, 2])) < 2)
+    stop("sample_design must contain at least two conditions.")
 
-  # reorder targeting guides first, non-targeting controls last
+  if (nrow(counts) != nrow(guide_to_gene))
+    stop(sprintf(
+      "Dimension mismatch: counts has %d rows but guide_to_gene has %d rows.",
+      nrow(counts), nrow(guide_to_gene)
+    ))
+
+  if (ncol(counts) != nrow(sample_design))
+    stop(sprintf(
+      "Dimension mismatch: counts has %d columns but sample_design has %d rows.",
+      ncol(counts), nrow(sample_design)
+    ))
+
+  if (!isTRUE(all.equal(colnames(counts), as.character(sample_design[, 1]))))
+    stop("Column names of counts must match sample names in sample_design, in the same order.")
+
+  if (!isTRUE(all.equal(rownames(counts), as.character(guide_to_gene[, 1]))))
+    stop("Row names of counts must match guide names in guide_to_gene, in the same order.")
+
+  # reorder: targeting guides first, NTCs last
   if (!is.null(controls)) {
-    targeting_idx <- which(!guide_to_gene[,1] %in% controls)
-    ntc_idx       <- which(guide_to_gene[,1] %in% controls)
-
+    targeting_idx <- which(!guide_to_gene[, 1] %in% controls)
+    ntc_idx <- which(guide_to_gene[, 1] %in% controls)
     new_order <- c(targeting_idx, ntc_idx)
 
     counts <- counts[new_order, , drop = FALSE]
     guide_to_gene <- guide_to_gene[new_order, , drop = FALSE]
 
-    # controls after reordering
+    ntc_rows <- (length(targeting_idx) + 1):nrow(guide_to_gene)
     controls <- data.frame(
-      guide = guide_to_gene[(length(targeting_idx)+1):nrow(guide_to_gene), 1],  # last rows = controls
-      index = (length(targeting_idx)+1):nrow(guide_to_gene),
+      guide = guide_to_gene[ntc_rows, 1],
+      index = ntc_rows,
       stringsAsFactors = FALSE
     )
   }
 
   guide_to_gene <- as.data.frame(guide_to_gene)
-  colnames(guide_to_gene) <- c('sgRNA', 'gene')
+  colnames(guide_to_gene) <- c("sgRNA", "gene")
 
-  design <- as.integer(as.factor(sample_design[,2]))
-  design <- ifelse(design == 1, "control", "treatment")
-
+  condition <- as.integer(as.factor(sample_design[, 2]))
   sample_design <- data.frame(
-    sample = sample_design[,1],
-    design = as.factor(design),
+    sample = sample_design[, 1],
+    design = as.factor(ifelse(condition == 1, "control", "treatment")),
     stringsAsFactors = FALSE
   )
 
-  dough <- list(
-    data = list(
+  list(data = list(
       counts   = as.matrix(counts),
-      row_data = as.data.frame(guide_to_gene),
+      row_data = guide_to_gene,
       col_data = sample_design,
       controls = controls
-    )
-  )
-
-  class(dough) <- "dough"
-  return(dough)
+  ))
 }
 
-#' filter targeting guide counts
-#'
-#' @param dough dough object with $data: $data$counts, $data$row_data, $data$col_data (optional: $data$controls)
-#' @param min_per_sample numeric, minimum total counts per guide across a min_prop samples to keep
-#' @param min_prop numeric, minimum proportion of samples for min_per_sample to meet min_per_sample, number of samples is rounded to nearest integer
-#' @param min_guides_per_gene numeric, minimum number of guides per gene to keep the gene
-#' @param verbose logical, indicating whether to print out dimensions before and after filtering
-#' @return dough object with filtered $data
-#' @export
-trim_dough <- function(dough, min_per_sample = 10, min_prop = 0.2, min_guides_per_gene = 2, verbose = TRUE) {
 
+#' Filter guides and genes from a dough object by minimum count thresholds
+#'
+#' @param dough dough object with \code{$data}
+#' @param min_per_sample minimum counts per guide in at least \code{min_prop} of samples
+#' @param min_prop minimum proportion of samples that must meet \code{min_per_sample}
+#' @param min_guides_per_gene minimum number of guides required to retain a gene
+#' @param verbose logical; whether to print guide and gene counts before and after filtering
+#' @return dough object with filtered \code{$data}
+#' @export
+trim_dough <- function(dough,
+                       min_per_sample = 10,
+                       min_prop = 0.2,
+                       min_guides_per_gene = 2,
+                       verbose = TRUE) {
   counts <- dough$data$counts
   row_data <- dough$data$row_data
   col_data <- dough$data$col_data
   controls <- dough$data$controls
 
-  # indicate which guides are non-targeting controls
   is_ntc <- row_data$sgRNA %in% controls$guide
 
-  # filtering all zero counts
-  keep_zero <- rowSums(counts) > 0
-
-  # filter targeting guides by minimum count across a proportion of samples, rounded to the nearest integer
+  keep_nonzero <- rowSums(counts) > 0
   keep_counts <- rowSums(counts >= min_per_sample) >= round(min_prop * ncol(counts))
+  keep_genes <- row_data$gene %in% names(which(table(row_data$gene) >= min_guides_per_gene))
+  keep <- (keep_nonzero & keep_counts & keep_genes) | is_ntc
 
-  # filter genes by minimum guide per gene
-  gene_table <- table(row_data$gene)
-  keep_genes <- row_data$gene %in% names(gene_table[gene_table >= min_guides_per_gene])
+  counts_f <- counts[keep, , drop = FALSE]
+  row_data_f <- row_data[keep, , drop = FALSE]
 
-  # keep guides that satisfy counts and gene rules, or are NT controls
-  keep <- (keep_counts & keep_zero & keep_genes) | is_ntc
+  # ensure targeting guides precede NTCs
+  if (!is.null(controls)) {
+    is_ntc_f <- row_data_f$sgRNA %in% controls$guide
+    counts_f <- rbind(counts_f[!is_ntc_f, , drop = FALSE],
+                        counts_f[is_ntc_f,  , drop = FALSE])
+    row_data_f <- rbind(row_data_f[!is_ntc_f, , drop = FALSE],
+                        row_data_f[is_ntc_f,  , drop = FALSE])
 
-  counts_filtered <- counts[keep, , drop = FALSE]
-  row_data_filtered <- row_data[keep, , drop = FALSE]
-
-  # reconstruct count matrix so targeting guides come first and then non-targeting guides
-  if(!is.null(controls)) {
-    is_ntc_filtered <- row_data_filtered$sgRNA %in% controls$guide
-    counts_filtered <- rbind(counts_filtered[!is_ntc_filtered, , drop = FALSE],
-                             counts_filtered[is_ntc_filtered, , drop = FALSE])
-    row_data_filtered <- rbind(row_data_filtered[!is_ntc_filtered, , drop = FALSE],
-                          row_data_filtered[is_ntc_filtered, , drop = FALSE])
-    controls <- controls[controls$guide %in% row_data_filtered$sgRNA, , drop = FALSE]
-    controls$index <- match(controls$guide, row_data_filtered$sgRNA)
+    controls <- controls[controls$guide %in% row_data_f$sgRNA, , drop = FALSE]
+    controls$index <- match(controls$guide, row_data_f$sgRNA)
   }
 
-  # save filtered data to dough
   dough$data <- list(
-    counts = counts_filtered,
-    row_data = row_data_filtered,
+    counts = counts_f,
+    row_data = row_data_f,
     col_data = col_data,
     controls = controls
   )
 
-  # print before filtering and after filtering
   if (verbose) {
-    message("guides before: ", nrow(row_data),
-            "; after: ", nrow(row_data_filtered))
-    message("genes before: ", length(unique(row_data$gene)),
-            "; after: ", length(unique(row_data_filtered$gene)))
-    message("non-targeting controls preserved: ",
-            ifelse(!is.null(nrow(controls)), nrow(controls), 'no non-targeting guides were provided'))
+    message("Filtering finished!")
+    message(sprintf("Guides: %d -> %d", nrow(row_data), nrow(row_data_f)))
+    message(sprintf("Genes:  %d -> %d", length(unique(row_data$gene)), length(unique(row_data_f$gene))))
+    message("Non-targeting controls preserved: ",
+            if (!is.null(controls)) nrow(controls) else "none provided")
   }
 
-  return(dough)
+  dough
 }
-
-
