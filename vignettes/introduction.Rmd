@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 
 `biscuit` is an R package that utilizes a Bayesian hierarchical inference model to analyze high-throughput CRISPR screen data. It performs inference using Stan via the `cmdstanr` interface.
 
-To install `cmdstanr` (and `cmdstan`):
+`biscuit` requires `cmdstanr` to run. To install `cmdstanr` (and `cmdstan`):
 
 ```{rf}
 # we recommend running this in a fresh R session or restarting your current session
@@ -36,11 +36,13 @@ if (!requireNamespace("remotes", quietly = TRUE)) {
 }
 
 remotes::install_github("sandyskim/biscuit")
-library(biscuit)
 ```
 
 ## Using `biscuit`
 
+```{r}
+library(biscuit)
+```
 The `biscuit` workflow:
 
 1.  **Load and bundle data into a `dough` object**\
@@ -55,7 +57,7 @@ The `biscuit` workflow:
 4.  **Explore posterior estimates**\
     After fitting the model, summarize the guide- and gene-level posterior distributions, which provide both effect size estimates and uncertainty, and significant hits. Additionally, `biscuit` provides plotting functions to visualize these results.
 
-To demonstrate how to use `biscuit`, we provide an example using the data from Regnase-1 screen [1].
+To demonstrate how to use `biscuit`, we provide an example using the data from Regnase-1 screen [1]. The Regnase-1 screen is a bi-directional CRISPR screen targeting 3018 genes, with about 6 guides per gene with one control sample and three treatment samples.
 
 ### Load and bundle data into a `dough` object
 
@@ -75,7 +77,7 @@ To create a `dough` object, you need:
 To make a `dough` object, we call the function `make_dough()`:
 
 ```{r}
-dough_obj <- make_dough(
+dough <- make_dough(
   counts = regnase$counts,
   guide_to_gene = regnase$guide_to_gene,
   sample_design = regnase$sample_design,
@@ -89,16 +91,18 @@ dough_obj <- make_dough(
 
 Now that the data is organized in a `dough` object, we can filter the data before fitting the model.
 
-`biscuit` performs the following preprocessing steps:
+`biscuit` performs the following pre-processing steps:
 
 1.  **Removing low-count guides**: guides with very few reads across all samples may not provide reliable information. By default, all guides with 0 counts across all samples and guides with a sum of \<1 count across 20% of samples are filtered out.
 2.  **Filtering genes with few guides**: genes targeted by only one or two guides can be noisy. By default, genes with \<2 guides targeting it are filtered out.
 
+Filtering can also be done in in the same step as fitting the model (see below), but only with default configurations.
+
 To preprocess the data, we call the function `trim_dough()`:
 
 ```{r}
-dough_obj <- trim_dough(
-  dough_obj,
+dough <- trim_dough(
+  dough,
   min_per_sample = 1, 
   min_prop = 0.2, 
   min_guides_per_gene = 2, 
@@ -124,20 +128,20 @@ Note: `biscuit` performs statistical inference using MCMC sampling, which can be
 
 ```{r}
 biscuit_fit <- bake_biscuit(
-  dough_obj,
+  dough,
   output_dir,
-  filter = FALSE,
-  save_samples = TRUE,
+  filter = FALSE, # here, we indicate false as we filtered before (see above)
+  save_samples = FALSE,
   n_parallel_chains = 4,
   seed=13,
   pseudocount=TRUE)
 ```
 
-Once the model is finished fitting, `biscuit_fit()` converts the original `dough` object into a `biscuit` object, which contains the original input data from `dough$data` under `$data` and the posterior samples, sampling diagnostics, and sampling run time under `$fit`.
+Once the model is finished fitting, `biscuit_fit()` converts the original `dough` object into a `biscuit` object, which contains the original input data from `dough$data` under `$data` as well as the sampling diagnostics and run time under `$fit`.
 
 ### Explore posterior estimates
 
-`biscuit` computes posterior summaries as well as the local false sign rate for each guide-level and gene-level effect for downstream analysis.
+`biscuit` computes posterior summaries as well as the local false discovery rate for each guide-level and gene-level effect for downstream analysis.
 
 #### Summarizing posterior estimates
 
@@ -147,15 +151,11 @@ Once the model is finished fitting, `biscuit_fit()` converts the original `dough
 -   `beta1`: guide-level effects
 -   `beta0`: baseline guide-level expression (intercept)
 -   `phi`: guide-level dispersion
--   `gamma`: sample-level dispersion scaling factors
+-   `eff`: guide-level efficacy
 
-For each parameter, the summary table reports the **mean**, **median**, **standard deviation**, and **2.5% and 97.5% quantiles**. In addition, the **local false sign rate** is calculated for `beta1` and `mu`, providing a measure of significance as a function of directional confidence.
-
-To summarize posterior draws and calculate local false sign rate, we call the function `summarize_parameters()`:
+For each parameter, the summary table reports the **mean**, **median**, **standard deviation**, and **2.5% and 97.5% quantiles**. In addition, the **local false dicovery rate** is calculated for `beta1` and `mu`, providing a measure of significance as a function of confidence.
 
 ```{r}
-biscuit_fit <- summarize_parameters(biscuit_fit)
-
 # view the summary of beta1 (guide-level effects)
 head(biscuit_fit$results$beta1)
 
@@ -181,7 +181,7 @@ plot_guide_violin(biscuit_fit)
 plot_guide_ma(biscuit_fit)
 ```
 
-`plot_gene_rank()` orders genes by their inferred effect size (`mu)` in descending order, visualizing the ranking and identifying the most significant hits. Since inferred gene effects are ordered, this allows us to identify the strongest hits via magnitude, while comparing them in relation to the rest of the genes in the screen.
+`plot_gene_rank()` orders genes by their inferred effect size (`mu`) in descending order, visualizing the ranking and identifying the most significant hits. Since inferred gene effects are ordered, this allows us to identify the strongest hits via magnitude, while comparing them in relation to the rest of the genes in the screen.
 
 ```{r}
 plot_gene_rank(biscuit_fit)
@@ -191,18 +191,6 @@ plot_gene_rank(biscuit_fit)
 
 ```{r}
 plot_gene_volcano(biscuit_fit)
-```
-
-`plot_phi_gamma_density()` shows posterior means of guide-level dispersion (`phi`) and how sample-level scaling (\`gamma\`) varies across samples. By stacking the densities of `phi` and how each `gamma` scales `phi`, we can inspect difference in dispersion across samples and evaluate whether it aligns with the expectation that control samples exhibit lower dispersion compared to treatment samples.
-
-```{r}
-plot_phi_gamma_density(biscuit_fit)
-```
-
-`plot_mu_beta1` visualizes, for a given gene, the posterior distribution of the gene-level effect (`mu`) and the posterior means of guide-level effects (`beta1`) for all guides targeting that gene, showing how individual guides contribute to the overall gene effect. This allows us to assess guide behavior and identify any guide outliers as a function of the gene its targeting.
-
-```{r}
-plot_mu_beta1(biscuit_fit, 'Zc3h12a')
 ```
 
 ## Conclusion

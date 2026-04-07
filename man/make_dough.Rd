@@ -2,22 +2,23 @@
 % Please edit documentation in R/preprocessing.R
 \name{make_dough}
 \alias{make_dough}
-\title{make dough object from counts, guide_to_gene mapping, and design of samples (optional: list of names of non-targeting controls)}
+\title{Create a dough object from counts, guide-to-gene mapping, and sample design}
 \usage{
 make_dough(counts, guide_to_gene, sample_design, controls = NULL)
 }
 \arguments{
-\item{counts}{n_guides x n_samples matrix holding the raw guide/sgRNA counts in each sample}
+\item{counts}{n_guides x n_samples matrix of raw guide/sgRNA counts}
 
-\item{guide_to_gene}{n_guides x 2 matrix holding the name of the guide/sgRNA in the first column and the name of the gene it's targeting in the second column.}
+\item{guide_to_gene}{n_guides x 2 data frame with guide names in column 1 and target gene names in column 2}
 
-\item{sample_design}{n_samples x 2 holding the name of the samples (which match the column names of the counts) in the first column and the experimental design in the second column. the first sample must be a control sample.}
+\item{sample_design}{n_samples x 2 data frame with sample names in column 1 and condition in column 2;
+column names must match \code{colnames(counts)}; first condition listed is treated as control}
 
-\item{controls}{(optional) vector containing the names of the non-targeting guides, all of which must be in the first column of guide_to_gene}
+\item{controls}{optional character vector of non-targeting guide names; must appear in column 1 of \code{guide_to_gene}}
 }
 \value{
-dough object, with data stored in $data
+dough object with data stored in \code{$data}
 }
 \description{
-make dough object from counts, guide_to_gene mapping, and design of samples (optional: list of names of non-targeting controls)
+Create a dough object from counts, guide-to-gene mapping, and sample design
 }

@@ -4,12 +4,12 @@
 \alias{plot_gene_volcano}
 \title{plot volcano plot for inferred gene-level effects}
 \usage{
-plot_gene_volcano(biscuit, lfsr_threshold = 0.05, top_n = 10)
+plot_gene_volcano(biscuit, lfdr_threshold = 0.05, top_n = 10)
 }
 \arguments{
 \item{biscuit}{a biscuit object with $results}
 
-\item{lfsr_threshold}{threshold to highlight significant genes}
+\item{lfdr_threshold}{threshold to highlight significant genes}
 
 \item{top_n}{number of top genes to label}
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/preprocessing.R
 \name{trim_dough}
 \alias{trim_dough}
-\title{filter targeting guide counts}
+\title{Filter guides and genes from a dough object by minimum count thresholds}
 \usage{
 trim_dough(
   dough,
@@ -13,19 +13,19 @@ trim_dough(
 )
 }
 \arguments{
-\item{dough}{dough object with $data: $data$counts, $data$row_data, $data$col_data (optional: $data$controls)}
+\item{dough}{dough object with \code{$data}}
 
-\item{min_per_sample}{numeric, minimum total counts per guide across a min_prop samples to keep}
+\item{min_per_sample}{minimum counts per guide in at least \code{min_prop} of samples}
 
-\item{min_prop}{numeric, minimum proportion of samples for min_per_sample to meet min_per_sample, number of samples is rounded to nearest integer}
+\item{min_prop}{minimum proportion of samples that must meet \code{min_per_sample}}
 
-\item{min_guides_per_gene}{numeric, minimum number of guides per gene to keep the gene}
+\item{min_guides_per_gene}{minimum number of guides required to retain a gene}
 
-\item{verbose}{logical, indicating whether to print out dimensions before and after filtering}
+\item{verbose}{logical; whether to print guide and gene counts before and after filtering}
 }
 \value{
-dough object with filtered $data
+dough object with filtered \code{$data}
 }
 \description{
-filter targeting guide counts
+Filter guides and genes from a dough object by minimum count thresholds
 }

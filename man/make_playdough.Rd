@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulation.R
 \name{make_playdough}
 \alias{make_playdough}
-\title{simulate count data using either fixed, parametric, or empirical gene effects}
+\title{Simulate count data using fixed, parametric, or empirical gene effects}
 \usage{
 make_playdough(
   n_genes,
@@ -12,13 +12,14 @@ make_playdough(
   p_effects = 0.1,
   p_positive = 0.1,
   fold_change = 4,
-  expression = c(4, 6),
+  expression = 5,
   guide_efficiency = 0.8,
-  guide_sd = 0.5,
+  guide_sd = 1,
   n_ntc = 1000,
   seed = 13,
-  gene_params = list(mu = log(fold_change), sd = 2),
-  effect_mode = c("fixed", "parametric", "empirical"),
+  gene_params = list(mu = log(fold_change), sd = 1),
+  disp_params = list(a = 0.1, b = 4),
+  effect_mode = c("parametric", "fixed", "empirical"),
   counts = NULL,
   quantiles = c(0.05, 0.95)
 )
@@ -36,25 +37,31 @@ make_playdough(
 
 \item{p_positive}{proportion of effects that are positive}
 
-\item{fold_change}{absolute fold change of non-zero effects for fixed-effect mode, default mean for parametric mode}
+\item{fold_change}{absolute fold change for fixed mode; default mean for parametric mode}
 
-\item{guide_sd}{optional standard deviation for guide effect simulation}
+\item{expression}{mean baseline expression level}
+
+\item{guide_efficiency}{probability a guide has a non-zero effect}
+
+\item{guide_sd}{standard deviation for guide-level effect noise}
 
 \item{n_ntc}{number of non-targeting control guides}
 
 \item{seed}{integer seed for reproducibility}
 
-\item{gene_params}{optional list for parametric mode (e.g. list(mu = log(4), sd = 0.2))}
+\item{gene_params}{named list for parametric mode (e.g. \code{list(mu = log(4), sd = 0.2)})}
 
-\item{effect_mode}{"fixed", "parametric", or "empirical": modes that determine how gene effects are simulated}
+\item{disp_params}{named list of dispersion trend coefficients (e.g. \code{list(a = 0.1, b = 4)})}
 
-\item{counts}{optional matrix of raw experimental counts; if provided, will use to calculate baseline expression and guide-wise dispersion}
+\item{effect_mode}{one of \code{"parametric"}, \code{"fixed"}, or \code{"empirical"}}
 
-\item{quantiles}{optional quantiles (e.g. c(0.05, 0.95)) to draw significant effects from in empirical mode}
+\item{counts}{optional matrix of raw counts; if provided, used to estimate baseline expression and dispersion}
+
+\item{quantiles}{quantile bounds for selecting extreme effects in empirical mode (e.g. \code{c(0.05, 0.95)})}
 }
 \value{
-list with simulated counts, guide to gene mapping, sample design and true parameter values
+list with simulated counts, guide-to-gene mapping, sample design, and true parameter values
 }
 \description{
-simulate count data using either fixed, parametric, or empirical gene effects
+Simulate count data using fixed, parametric, or empirical gene effects
 }

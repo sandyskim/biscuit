@@ -4,12 +4,12 @@
 \alias{plot_guide_ma}
 \title{plot MA plot of guides using inferred guide effects (beta1)}
 \usage{
-plot_guide_ma(biscuit, lfsr_threshold = 0.05, top_n = 10)
+plot_guide_ma(biscuit, lfdr_threshold = 0.05, top_n = 10)
 }
 \arguments{
 \item{biscuit}{biscuit object with $results}
 
-\item{lfsr_threshold}{threshold to highlight significant guides}
+\item{lfdr_threshold}{threshold to highlight significant guides}
 
 \item{top_n}{number of top guides to label}
 }

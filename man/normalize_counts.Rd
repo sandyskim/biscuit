@@ -2,7 +2,7 @@
 % Please edit documentation in R/helpers.R
 \name{normalize_counts}
 \alias{normalize_counts}
-\title{normalize counts using the median-of-ratios method (ref. DESeq2)}
+\title{Normalize counts using the median-of-ratios method (ref. DESeq2)}
 \usage{
 normalize_counts(dough)
 }
@@ -13,5 +13,5 @@ normalize_counts(dough)
 matrix of normalized read counts
 }
 \description{
-normalize counts using the median-of-ratios method (ref. DESeq2)
+Normalize counts using the median-of-ratios method (ref. DESeq2)
 }

@@ -2,18 +2,22 @@
 % Please edit documentation in R/postprocessing.R
 \name{summarize_parameters}
 \alias{summarize_parameters}
-\title{summarize posterior draws}
+\title{Summarize posterior parameters}
 \usage{
-summarize_parameters(biscuit, pars = c("mu", "beta1", "beta0", "phi", "gamma"))
+summarize_parameters(
+  dough,
+  fit_summary,
+  pars = c("mu", "beta1", "beta0", "phi", "eff", "mu_ntc", "tau_ntc")
+)
 }
 \arguments{
-\item{biscuit}{biscuit object with $fit}
+\item{dough}{dough object with \code{$fit}}
 
-\item{pars}{list parameter names to summarize (e.g. c('mu', 'beta1'))}
+\item{pars}{character vector of parameter names to summarize}
 }
 \value{
-biscuit object with $results
+dough object with \code{$results} appended
 }
 \description{
-summarize posterior draws
+Summarize posterior parameters
 }

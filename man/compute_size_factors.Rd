@@ -2,7 +2,7 @@
 % Please edit documentation in R/helpers.R
 \name{compute_size_factors}
 \alias{compute_size_factors}
-\title{calculate size factors via median-of-ratios (ref. DESeq2)}
+\title{Calculate size factors via median-of-ratios (ref. DESeq2)}
 \usage{
 compute_size_factors(dough)
 }
@@ -13,5 +13,5 @@ compute_size_factors(dough)
 size factors
 }
 \description{
-calculate size factors via median-of-ratios (ref. DESeq2)
+Calculate size factors via median-of-ratios (ref. DESeq2)
 }
