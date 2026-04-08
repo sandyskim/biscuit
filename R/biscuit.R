@@ -69,7 +69,7 @@ fit_biscuit <- function(dough,
     dough <- trim_dough(dough)
   }
 
-  model_data <- knead_dough(dough, pseudocount)
+  model_data <- generate_biscuit_input(dough, pseudocount)
 
   stan_file <- if (is.null(dough$data$controls)) {
     message("No non-targeting controls detected, using NTC-free model.")
